@@ -6,7 +6,6 @@ source('~/GitHub/Rplots/themes_ldh.r')
 # Import data -------------------------------------------------------------
 
 
-
 fragileFile = '~/GitHub/StataTraining/Data/fragilestatesindex-2006to2014.xlsx'
 
 # Seed w/ 2014 and 2015 data.
@@ -40,6 +39,33 @@ for (i in 2:9) {
   }
 
 
+# calc lag ----------------------------------------------------------------
+
+fragile = fragile %>% 
+  group_by(country, year) %>% 
+  mutate(y = lag(Total))
+
 # Country by year trends --------------------------------------------------
+fragile = fragile %>% 
+  filter(!is.na(Total)) %>% 
+  mutate(x = ntile(country, 4))
 
+ggplot(fragile, aes(x = year, y = Total, group = country)) +
+  geom_line(size = 2, color = grey50K, alpha = 0.3) +
+  facet_wrap(~x) +
+  theme_yGrid()
 
+# What's happened to the average?
+ggplot(fragile, aes(x = year, y = Total, group = 1)) +
+  stat_summary(geom = 'line', fun.y = mean, 
+               size = 2, color = 'dodgerblue') + 
+  theme_jointplot() +
+  coord_cartesian(ylim = c(0, 115))
+
+fragile %>% 
+  ggvis(~year, ~Total) %>% 
+  layer_paths()
+
+fragile %>% 
+mjs_plot(x=year, y=Total) %>%
+  mjs_point()
