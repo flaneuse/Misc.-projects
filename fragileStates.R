@@ -45,6 +45,8 @@ fragile = fragile %>%
   group_by(country, year) %>% 
   mutate(y = lag(Total))
 
+fragile$id = 1:nrow(fragile)
+
 # Country by year trends --------------------------------------------------
 fragile = fragile %>% 
   filter(!is.na(Total)) %>% 
@@ -62,10 +64,20 @@ ggplot(fragile, aes(x = year, y = Total, group = 1)) +
   theme_jointplot() +
   coord_cartesian(ylim = c(0, 115))
 
-fragile %>% 
-  ggvis(~year, ~Total) %>% 
-  layer_paths()
 
 fragile %>% 
-mjs_plot(x=year, y=Total) %>%
+  mjs_plot(x=year, y=Total) %>%
   mjs_point()
+
+
+all_values <- function(x) {
+  if(is.null(x)) return(NULL)
+  paste0(names(x), ": ", format(x), collapse = "<br />")
+  }
+
+fragile %>% 
+  group_by(country) %>% 
+  ggvis(~year, ~Total) %>% 
+  layer_paths() %>% 
+  add_tooltip(all_values, 'hover')
+
