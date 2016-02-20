@@ -2,29 +2,177 @@
 title: "FFP Activities"
 author: "Laura Hughes"
 date: "February 18, 2016"
-output: html_document
+output: word_document
 ---
 
-```{r setup, include=FALSE}
+```{r setup, cache = TRUE}
 knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+library(dplyr)
+library(knitr)
+library(stringr)
 ```
 
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+## Activities for 2015 reporting. 
+```{r import, echo = FALSE, cache = TRUE}
+activ = read.csv('~/Documents/USAID/Kyla - FFP reshaping/Development_activities_2016-02-19.csv') %>% 
+    filter(pgrmType == 'Development',
+           isActive == 1, 
+           ARRyear == 2015)
 ```
 
-## Including Plots
+### MCH : number of projects per country
+** Note: contains both 1st or 2nd category labeled as MCH.  Similar for all below**
 
-You can also embed plots, for example:
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r MCH_country, cache=TRUE}
+knitr::kable(activ %>% filter(str_detect(category1, 'Maternal') | 
+                         str_detect(category2, 'Maternal')) %>% 
+               filter(ARRyear==2015) %>% 
+        group_by(Country) %>%
+        summarise(num = sum(isActive)) %>% 
+          arrange(desc(num))
+        )
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+### MCH : breakdown of subcategories for each country
+```{r MCH_subcat, cache=TRUE}
+knitr::kable(activ %>% filter(str_detect(category1, 'Maternal') | 
+                         str_detect(category2, 'Maternal')) %>% 
+        group_by(Country, subcategory) %>%
+        summarise(num = sum(isActive)) %>% 
+          arrange(desc(num))
+        )
+```
+
+
+### MCH : breakdown of activities, overall
+```{r MCH_activ, cache=TRUE}
+knitr::kable(activ %>% filter(str_detect(category1, 'Maternal') | 
+                         str_detect(category2, 'Maternal')) %>% 
+        group_by(activity) %>%
+        summarise(num = sum(isActive)) %>% 
+          arrange(desc(num))
+        )
+```
+
+
+
+### Ag : number of projects per country
+```{r Ag_country, cache=TRUE}
+knitr::kable(activ %>% filter(str_detect(category1, 'Agriculture') | 
+                         str_detect(category2, 'Agriculture')) %>% 
+        group_by(Country) %>%
+        summarise(num = sum(isActive)) %>% 
+          arrange(desc(num))
+        )
+```
+
+### Ag : breakdown of subcategories for each country
+```{r Ag_subcat, cache=TRUE}
+knitr::kable(activ %>% filter(str_detect(category1, 'Agriculture') | 
+                         str_detect(category2, 'Agriculture')) %>% 
+        group_by(Country, subcategory) %>%
+        summarise(num = sum(isActive)) %>% 
+          arrange(desc(num))
+        )
+```
+
+
+### Ag : breakdown of activities, overall
+```{r Ag_activ, cache=TRUE}
+knitr::kable(activ %>% filter(str_detect(category1, 'Agriculture') | 
+                         str_detect(category2, 'Agriculture')) %>% 
+        group_by(activity) %>%
+        summarise(num = sum(isActive)) %>% 
+          arrange(desc(num))
+        )
+```
+
+
+### WASH : number of projects per country
+```{r wash_country, cache=TRUE}
+knitr::kable(activ %>% filter(str_detect(category1, 'WASH') | 
+                         str_detect(category2, 'WASH')) %>% 
+        group_by(Country) %>%
+        summarise(num = sum(isActive)) %>% 
+          arrange(desc(num))
+        )
+```
+
+### WASH : breakdown of subcategories for each country
+```{r wash_subcat, cache=TRUE}
+knitr::kable(activ %>% filter(str_detect(category1, 'WASH') | 
+                         str_detect(category2, 'WASH')) %>% 
+        group_by(Country, subcategory) %>%
+        summarise(num = sum(isActive)) %>% 
+          arrange(desc(num))
+        )
+```
+
+
+### WASH : breakdown of activities, overall
+```{r wash_activ, cache=TRUE}
+knitr::kable(activ %>% filter(str_detect(category1, 'WASH') | 
+                         str_detect(category2, 'WASH')) %>% 
+        group_by(activity) %>%
+        summarise(num = sum(isActive)) %>% 
+          arrange(desc(num))
+        )
+```
+
+
+
+
+### WASH : by partners: summed number of unique types of activities for ALL projects.
+```{r wash_partner, cache=TRUE}
+uniqueActiv = activ %>% filter(str_detect(category1, 'WASH') | 
+                         str_detect(category2, 'WASH')) %>% 
+        group_by(Awardee) %>% 
+          distinct(Awardee, activity) %>% 
+          summarise(numDistinctActiv = n()) %>% 
+          arrange(desc(numDistinctActiv))
+
+kable(uniqueActiv)
+
+uniquePerProj = activ %>% filter(str_detect(category1, 'WASH') | 
+                         str_detect(category2, 'WASH')) %>% 
+        group_by(Awardee, id) %>% 
+          summarise(numDistinctActiv = sum(isActive)) %>% 
+          arrange(desc(numDistinctActiv))
+
+# Roll up to the Awardee level.
+kable(uniquePerProj %>% 
+        group_by(Awardee) %>%
+        summarise(avgActiv = round(mean(numDistinctActiv),1),
+                  minActiv = min(numDistinctActiv),
+                  maxActiv = max(numDistinctActiv),
+                  sdActiv = round(sd(numDistinctActiv),2),
+                  numProj = n()) %>% 
+        arrange(desc(avgActiv))
+)
+
+```
+
+### WASH : by partners: average number of WASH activities per project.
+```{r wash_partner_avg, cache=TRUE}
+
+uniquePerProj = activ %>% filter(str_detect(category1, 'WASH') | 
+                         str_detect(category2, 'WASH')) %>% 
+        group_by(Awardee, id) %>% 
+          summarise(numDistinctActiv = sum(isActive)) %>% 
+          arrange(desc(numDistinctActiv))
+
+# Roll up to the Awardee level.
+kable(uniquePerProj %>% 
+        group_by(Awardee) %>%
+        summarise(avgActiv = round(mean(numDistinctActiv),1),
+                  minActiv = min(numDistinctActiv),
+                  maxActiv = max(numDistinctActiv),
+                  sdActiv = round(sd(numDistinctActiv),2),
+                  numProj = n()) %>% 
+        arrange(desc(avgActiv))
+)
+
+```
+

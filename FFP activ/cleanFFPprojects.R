@@ -44,13 +44,16 @@ metadata = read_excel('~/Documents/USAID/Kyla - FFP reshaping/TecSectorsTracking
                                                'numeric', 
                                                'text', 'text', 'text', 'blank', 'blank', 'text', 'text')) %>% 
   mutate(startDate = ymd(startDate),
-            endDate = ymd(endDate)) %>% 
+         endDate = ymd(endDate),
+         startYr = year(startDate)) %>% 
   rename(pgrmNum = `Program Number`,
          pgrmName = `Program Name`,
          countryCt = `Country Count`,
          pgrmType = `Program Type`,
          ARRyear = `ARR Year Submitted`
-         )
+  ) 
+  
+metadata = metadata %>% mutate(yearInPgrm = ARRyear - startYear + 1)
 
 
 # 3) Add in the corrected categories from Kyla
@@ -146,13 +149,13 @@ activ %>% group_by(Awardee) %>% summarise(num = n()) %>% arrange(desc(num))
 View(activ %>% group_by(Awardee, category) %>% summarise(num = n()) %>% mutate(total = sum(num), pct = num/total) %>% ungroup() %>% arrange(desc(num)))
 
 # Export data -------------------------------------------------------------
-write.csv(activ, '~/Documents/USAID/Kyla - FFP reshaping/Development_activities.csv')
-write.csv(activities, '~/Documents/USAID/Kyla - FFP reshaping/allFFP_activities.csv')
+write.csv(activ, '~/Documents/USAID/Kyla - FFP reshaping/Development_activities_2016-02-19.csv')
+write.csv(activities, '~/Documents/USAID/Kyla - FFP reshaping/allFFP_activities_2016-02-19.csv')
 
 # just categories and activities ------------------------------------------
-uniqueActiv = activ %>% 
-  select(category, subcategory, activity) %>% 
-  distinct() %>% 
-  arrange(category, subcategory, activity)
-
-write.csv(uniqueActiv, '~/Documents/USAID/Kyla - FFP reshaping/activity_categories.csv')
+# uniqueActiv = activ %>% 
+#   select(category, subcategory, activity) %>% 
+#   distinct() %>% 
+#   arrange(category, subcategory, activity)
+# 
+# write.csv(uniqueActiv, '~/Documents/USAID/Kyla - FFP reshaping/activity_categories.csv')
