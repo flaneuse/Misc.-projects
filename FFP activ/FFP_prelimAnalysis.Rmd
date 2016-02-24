@@ -19,6 +19,11 @@ activ = read.csv('~/Documents/USAID/Kyla - FFP reshaping/Development_activities_
     filter(pgrmType == 'Development',
            isActive == 1, 
            ARRyear == 2015)
+
+allActiv = read.csv('~/Documents/USAID/Kyla - FFP reshaping/allFFP_activities_2016-02-19.csv') %>% 
+    filter(pgrmType == 'Development',
+           isActive == 1, 
+           ARRyear == 2015)
 ```
 
 ### MCH : number of projects per country
@@ -173,6 +178,24 @@ kable(uniquePerProj %>%
                   numProj = n()) %>% 
         arrange(desc(avgActiv))
 )
+
+```
+
+
+## What's the correlation b/w WASH activities?
+
+```{r washActiv, cache = TRUE}
+wash = activities %>% 
+  filter(str_detect(category1, 'WASH') | str_detect(category2, 'WASH')) %>% 
+  select(activity, isActive, id)
+
+ggplot(wash, aes(x = y = isActive))
+
+corMatrix = wash %>% 
+  mutate(isActive = ifelse(is.na(isActive), 0, isActive)) %>% 
+  spread(activity, isActive)
+
+x = cor(corMatrix %>% select(-id))
 
 ```
 
