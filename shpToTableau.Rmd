@@ -50,22 +50,19 @@ write.csv(adm1_df, '~/Documents/USAID/mini projects/tableaupolygonsfromshapefile
 
 
 
-
-
-setwd('~/Documents/USAID/mini projects/tableaupolygonsfromshapefiles/khm_admbnda_adm2_gov')
+setwd('~/Documents/USAID/mini projects/tableaupolygonsfromshapefiles/khm_WatrcrsA_wfp/')
 
 # the dsn argument of '.' says to look for the layer in the current directory.
-rawAdm2 = rgdal::readOGR(dsn=".", layer="khm_admbnda_adm2_gov")
+rawLakes = rgdal::readOGR(dsn=".", layer="khm_WatrcrsA_wfp")
 
 # pull out the row names from the data and save it as a new column called 'id'
-rawAdm2@data$id = rownames(rawAdm2@data)
+rawLakes@data$id = rownames(rawLakes@data)
 
 
-adm2_points = ggplot2::fortify(rawAdm2, region="id")
-adm2_df = plyr::join(adm2_points, rawAdm2@data, by="id")
+lakes_points = ggplot2::fortify(rawLakes, region="id")
+lakes_df = plyr::join(lakes_points, rawLakes@data, by="id")
 
 
-write.csv(adm2_df, '~/Documents/USAID/mini projects/tableaupolygonsfromshapefiles/khm_admbnda_adm2_gov_tableau.csv')
 
 ```
 
@@ -95,7 +92,7 @@ ggplot is built using the [Grammar of Graphics](http://www.amazon.com/The-Gramma
 
 These polygons will be made up of a series of coordinates, with the x being longitude, y being latitude, and will be grouped according to the 'group' variable in our new data frame. The group variable is just a running numbered list of which polygon those coordinates belong to.
 
-In ggplot, those are given to the function by defining the aesthetics within `aes()`:
+In ggplot, those are given to the function by defining the aesthetics within `aes()`. What's great about ggplot is that every component is built up on top of each other, simply by stringing functions together using `+`.  It makes it really powerful to add complexity.  Here, we define where the data is using `ggplot` and `aes`, tell it that we want to plot them as polygons using `geom_polygon` with equal coordinates using `coord_equal`.
 ```{r plot1}
 ggplot(data = adm1_df, mapping = aes(x = long, 
                     y = lat, 
@@ -103,6 +100,7 @@ ggplot(data = adm1_df, mapping = aes(x = long,
   geom_polygon() +
   coord_equal()
 ```
+
 
 
 To better see the different administrative units, we can color the `fill` by the id for each different polygon:
@@ -125,12 +123,41 @@ ggplot(adm1_df, aes(x = long,
 ```
 
 
-You'll notice that we've set the coordinates to be equal using `coord_equal()`.  If you don't do that, the coordinates will look screwy:
+You'll also notice that we've set the coordinates to be equal using `coord_equal()`.  If you don't do that, the coordinates will look distorted and screwy:
 ```{r plot4}
 ggplot(adm1_df, aes(x = long, 
                     y = lat, 
-                    group = group)) +
+                    group = group,
+                    fill = id)) +
   geom_polygon()
 ```
 
 
+Now that we have a decent plot, we can start to do some fun things and clean it up.  First, we'll get rid of the coordinate background.  ggplot has a bunch of themes that determine the aestethics of how things are plotted: are there grid lines, axes, backgrounds, legends, text, etc. ... and how are they formatted.  There are also preset themes that you can call; here, we'll use `theme_void()`, which is essentially a blank background with a legend. The legend is somewhat meaningless here since we're just coloring the different regions, but would be useful in a traditional choropleth (think heatmap for a map). You can customize all the settings using the `theme` function.
+```{r plot5}
+ggplot(adm1_df, aes(x = long, 
+                    y = lat, 
+                    group = group,
+                    fill = id)) +
+  geom_polygon() +
+  coord_equal() +
+  theme_void()
+```
+
+
+Next, we can start to add in other layers of complexity. If we have another GIS layer with the lakes and rivers, we can add it on top of the original plot. To do that, we add another `geom_polygon` layer, but we'll need to specify that the underlying data source is different.  ggplot will assume the aesthetics are the same as the main plot unless you say otherwise.
+
+_Note: the lakes layer is complicated so it'll take awhile to plot.
+```{r plot6}
+ggplot(adm1_df, aes(x = long, 
+                    y = lat, 
+                    group = group)) +
+  geom_polygon(fill = 'grey') +
+  coord_equal() +
+  theme_void() + 
+  geom_polygon(data = lakes_df, fill = 'black') # water should be blue, huh?
+```
+
+In ggplot, the items are plotted in the order they appear, so if we switch the lakes layer and the Adm1 layer, we'd hide the lakes.
+
+We can also add a border around the provinces by adding a `geom_line` layer
