@@ -1,0 +1,136 @@
+---
+title: "Convert .shp file for Tableau or R"
+author: "Laura Hughes"
+date: "April 20, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Converting an ESRI Shapefile into a format for Tableau or R
+To be able to plot polygons within Tableau or R, you have to convert a shapefile into latitude and longitude coordinates.
+
+Fortunately, there are some nifty packages within R that allow you to do that very easily.  First, you need to import these packages.  Then you'll need to import data, and after that you manipulate your object.
+
+[Useful help document on plotting shapefiles in R using ggplot2](https://github.com/hadley/ggplot2/wiki/plotting-polygon-shapefiles)
+[Useful help document on plotting polygons in Tableau](http://kb.tableau.com/articles/knowledgebase/tableau-polygons-arcgis-shapefiles)
+
+### 1. Import necessary R packages. This includes:
+* **[dplyr]()**: general functions for manipulating data.  My second favorite package in R.
+* **[tidyr]()**: another data wrangling package; needed if you plan to merge any new data to your shapefile (for instance, to use values for a choropleth, which is a map-based heatmap)
+* **[rgdal]()**: functions to import and manipulate data
+* **[ggplot]()**: contains function to convert shapefiles into lat/lon coordinates. Also an amazingly powerful plotting package for R, and my favourite R package.
+
+
+### 2. Import your data
+
+```{r importData}
+library(rgdal)
+library(maptools)
+library(rgeos)
+library(plyr)
+library(ggplot2)
+
+# Set your working directory to the folder that contains your data
+setwd('~/Documents/USAID/mini projects/tableaupolygonsfromshapefiles/khm_admbnda_adm1_gov')
+
+# the dsn argument of '.' says to look for the layer in the current directory.
+rawAdm1 = rgdal::readOGR(dsn=".", layer="khm_admbnda_adm1_gov")
+
+# pull out the row names from the data and save it as a new column called 'id'
+rawAdm1@data$id = rownames(rawAdm1@data)
+
+
+adm1_points = ggplot2::fortify(rawAdm1, region="id")
+adm1_df = plyr::join(adm1_points, rawAdm1@data, by="id")
+
+write.csv(adm1_df, '~/Documents/USAID/mini projects/tableaupolygonsfromshapefiles/khm_admbnda_adm1_gov_tableau.csv')
+
+
+
+
+
+setwd('~/Documents/USAID/mini projects/tableaupolygonsfromshapefiles/khm_admbnda_adm2_gov')
+
+# the dsn argument of '.' says to look for the layer in the current directory.
+rawAdm2 = rgdal::readOGR(dsn=".", layer="khm_admbnda_adm2_gov")
+
+# pull out the row names from the data and save it as a new column called 'id'
+rawAdm2@data$id = rownames(rawAdm2@data)
+
+
+adm2_points = ggplot2::fortify(rawAdm2, region="id")
+adm2_df = plyr::join(adm2_points, rawAdm2@data, by="id")
+
+
+write.csv(adm2_df, '~/Documents/USAID/mini projects/tableaupolygonsfromshapefiles/khm_admbnda_adm2_gov_tableau.csv')
+
+```
+
+Shapefiles have four components:
+* The data
+* 
+
+```{r projections}
+
+```
+
+
+```{r names}
+
+```
+
+
+```{r appendingData}
+
+```
+
+
+### Building up a plot in ggplot2
+To check that we have what we want, we can plot the file in R using ggplot, quite possibly the most amazing plotting package ever built.  
+
+ggplot is built using the [Grammar of Graphics](http://www.amazon.com/The-Grammar-Graphics-Statistics-Computing/dp/0387245448), where every element of a plot is built up using a series of marks-- basic elements that can be combined to greater effect. So, for example, a bar graph is a series of rectangles that combine to form a bar graph. In the case of a shapefile of polygon data, as you might expect, we'll tell ggplot that we have a group of polygons to plot.
+
+These polygons will be made up of a series of coordinates, with the x being longitude, y being latitude, and will be grouped according to the 'group' variable in our new data frame. The group variable is just a running numbered list of which polygon those coordinates belong to.
+
+In ggplot, those are given to the function by defining the aesthetics within `aes()`:
+```{r plot1}
+ggplot(data = adm1_df, mapping = aes(x = long, 
+                    y = lat, 
+                    group = group)) +
+  geom_polygon() +
+  coord_equal()
+```
+
+
+To better see the different administrative units, we can color the `fill` by the id for each different polygon:
+```{r plot2}
+ggplot(adm1_df, aes(x = long, 
+                    y = lat, 
+                    group = group, 
+                    fill = id)) +
+  geom_polygon() +
+  coord_equal()
+```
+
+The aesthetic value `group` is the key to making the coordinates plot in the right order and be connected correctly. If we delet that argument, bad things happen:
+```{r plot3}
+ggplot(adm1_df, aes(x = long, 
+                    y = lat,
+                    fill = id)) +
+  geom_polygon() +
+  coord_equal()
+```
+
+
+You'll notice that we've set the coordinates to be equal using `coord_equal()`.  If you don't do that, the coordinates will look screwy:
+```{r plot4}
+ggplot(adm1_df, aes(x = long, 
+                    y = lat, 
+                    group = group)) +
+  geom_polygon()
+```
+
+
