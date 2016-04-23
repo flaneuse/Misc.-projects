@@ -269,7 +269,7 @@ ggplot(adm1_df, aes(x = long,
                     fill = fakeIndicator)) +
   coord_equal() +
   theme_void() +
-  geom_polygon(aes(group = group),
+  geom_polygon(mapping = aes(group = group),
                data = lakes_df, fill = 'dodgerblue') +
   geom_path(aes(group = group), colour = '#525252', size = 0.1) +
   geom_text(aes(label = label), 

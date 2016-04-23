@@ -122,7 +122,7 @@ adm1 = shp2csv(workingDir = '~/Documents/USAID/mini projects/tableaupolygonsfrom
                layerName = 'khm_admbnda_adm1_gov',
                labelVar = 'HRName',
                exportData = TRUE)
-ad1m_df = adm1$df
+adm1_df = adm1$df
 
 adm1_centroids = adm1$centroids
 
