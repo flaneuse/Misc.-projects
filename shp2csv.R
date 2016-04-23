@@ -44,11 +44,7 @@ shp2csv = function(workingDir = getwd(),
   # Merge the polygon lat/lon points with the original data
   df = dplyr::left_join(poly_points, projectedShp@data, by="id")
   
-  # if the 'exportData' option is selected, save the lat/lon coordinates as a .csv
-  if (exportData == TRUE){
-    write.csv(df, paste0(workingDir, '/', fileName, '.csv'))
-  }
-  
+
   # Pull out the centroids and the associated names.
   centroids = data.frame(coordinates(projectedShp)) %>% 
     rename(long = X1, lat = X2)
@@ -63,6 +59,14 @@ shp2csv = function(workingDir = getwd(),
       warning('label variable for the centroids is not in the raw shapefile')
     }
   }
+  
+  # if the 'exportData' option is selected, save the lat/lon coordinates as a .csv
+  if (exportData == TRUE){
+    write.csv(df, paste0(workingDir, '/', fileName, '.csv'))
+    write.csv(centroids, paste0(workingDir, '/', fileName, '_centroids.csv'))
+  }
+  
+  
   # Return the dataframe containing the coordinates and the centroids
   return(list(df = df, centroids = centroids))
 }
@@ -129,11 +133,15 @@ adm2 = shp2csv(workingDir = '~/Documents/USAID/mini projects/tableaupolygonsfrom
                layerName = "khm_admbnda_adm2_gov",
                exportData = TRUE)
 
+adm2_df = adm2$df
+
 plotMap(adm2_df)
 
 # Cambodia Adm3 data ------------------------------------------------------
-adm3_df = shp2csv(workingDir = '~/Documents/USAID/mini projects/tableaupolygonsfromshapefiles/khm_admbnda_adm3_gov',
+adm3 = shp2csv(workingDir = '~/Documents/USAID/mini projects/tableaupolygonsfromshapefiles/khm_admbnda_adm3_gov',
                   layerName = "khm_admbnda_adm3_gov",
                   exportData = TRUE)
+
+adm3_df = adm3$df
 
 plotMap(adm3_df)

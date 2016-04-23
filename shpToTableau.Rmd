@@ -127,9 +127,9 @@ lakes_df = dplyr::left_join(lakes_points, rawLakes@data, by="id")
 
 Now our data is in a nice tabular format with `long` and `lat` as separate columns:
 ```{r viewData}
-kable(head(adm1_df))
+knitr::kable(head(adm1_df))
 
-kable(head(lakes_df))
+knitr::kable(head(lakes_df))
 ```
 
 
@@ -311,6 +311,7 @@ ggplot(adm1_df, aes(x = long,
             colour = '#525252') + # set label to be the 'label' variable within adm1_ centroids; size is in mm
   scale_fill_gradientn(colours = brewer.pal(9, 'YlGnBu'))
 ```
+Obviously, we can clean this up and make it better by changing the font color so it's different based on the underlying fill color, but it's a decent start.
 
 ### 5. Save everything!
 ```{r exportData}
