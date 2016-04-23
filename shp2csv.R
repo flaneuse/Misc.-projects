@@ -22,7 +22,9 @@ library(ggplot2)
 shp2csv = function(workingDir = getwd(),
                    layerName,
                    exportData = TRUE,
-                   fileName = layerName){
+                   fileName = layerName,
+                   labelVar = NA,
+                   projection = '+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0'){
   
   # Change directory to the file folder containing the shape file
   setwd(workingDir)
@@ -30,22 +32,39 @@ shp2csv = function(workingDir = getwd(),
   # the dsn argument of '.' says to look for the layer in the current directory.
   rawShp = rgdal::readOGR(dsn=".", layer = layerName)
   
+  # reproject the data
+  projectedShp = spTransform(rawShp, CRS(projection))
+  
   # pull out the row names from the data and save it as a new column called 'id'
-  rawShp@data$id = rownames(rawShp@data)
+  projectedShp@data$id = rownames(projectedShp@data)
   
   # Convert the shape polygons into a series of lat/lon coordinates.
-  poly_points = ggplot2::fortify(rawShp, region="id")
+  poly_points = ggplot2::fortify(projectedShp, region="id")
   
   # Merge the polygon lat/lon points with the original data
-  df = dplyr::left_join(poly_points, rawShp@data, by="id")
+  df = dplyr::left_join(poly_points, projectedShp@data, by="id")
   
   # if the 'exportData' option is selected, save the lat/lon coordinates as a .csv
   if (exportData == TRUE){
     write.csv(df, paste0(workingDir, '/', fileName, '.csv'))
   }
   
-  # Return the dataframe
-  return(df)
+  # Pull out the centroids and the associated names.
+  centroids = data.frame(coordinates(projectedShp)) %>% 
+    rename(long = X1, lat = X2)
+  
+  if(!is.na(labelVar)){
+    if(labelVar %in% colnames(projectedShp@data)){
+      # Merge the names with the centroids
+      centroids = cbind(centroids,
+                        projectedShp@data[labelVar]) %>% 
+        rename_(label  = labelVar) # rename the column
+    } else{
+      warning('label variable for the centroids is not in the raw shapefile')
+    }
+  }
+  # Return the dataframe containing the coordinates and the centroids
+  return(list(df = df, centroids = centroids))
 }
 
 
@@ -85,24 +104,30 @@ plotMap = function(df,
 
 
 # Cambodia lakes/rivers data ------------------------------------------------------
-lakes_df = shp2csv(workingDir = '~/Documents/USAID/mini projects/tableaupolygonsfromshapefiles/khm_WatrcrsA_wfp',
-                  layerName = "khm_WatrcrsA_wfp",
-                  exportData = TRUE)
+lakes = shp2csv(workingDir = '~/Documents/USAID/mini projects/tableaupolygonsfromshapefiles/khm_WatrcrsA_wfp',
+                layerName = "khm_WatrcrsA_wfp",
+                exportData = TRUE)
+
+lakes_df = lakes$df
 
 plotMap(lakes_df)
 
 
 # Cambodia Adm1 data ------------------------------------------------------
-adm1_df = shp2csv(workingDir = '~/Documents/USAID/mini projects/tableaupolygonsfromshapefiles/khm_admbnda_adm1_gov',
-                  layerName = "khm_admbnda_adm1_gov",
-                  exportData = TRUE)
+adm1 = shp2csv(workingDir = '~/Documents/USAID/mini projects/tableaupolygonsfromshapefiles/khm_admbnda_adm1_gov',
+               layerName = 'khm_admbnda_adm1_gov',
+               labelVar = 'HRName',
+               exportData = TRUE)
+ad1m_df = adm1$df
+
+adm1_centroids = adm1$centroids
 
 plotMap(adm1_df)
 
 # Cambodia Adm2 data ------------------------------------------------------
-adm2_df = shp2csv(workingDir = '~/Documents/USAID/mini projects/tableaupolygonsfromshapefiles/khm_admbnda_adm2_gov',
-                  layerName = "khm_admbnda_adm2_gov",
-                  exportData = TRUE)
+adm2 = shp2csv(workingDir = '~/Documents/USAID/mini projects/tableaupolygonsfromshapefiles/khm_admbnda_adm2_gov',
+               layerName = "khm_admbnda_adm2_gov",
+               exportData = TRUE)
 
 plotMap(adm2_df)
 

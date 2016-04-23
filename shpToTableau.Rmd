@@ -12,91 +12,166 @@ knitr::opts_chunk$set(echo = TRUE)
 ## Converting an ESRI Shapefile into a format for Tableau or R
 To be able to plot polygons within Tableau or R, you have to convert a shapefile into latitude and longitude coordinates.
 
-Fortunately, there are some nifty packages within R that allow you to do that very easily.  First, you need to import these packages.  Then you'll need to import data, and after that you manipulate your object.
+Fortunately, there are some nifty packages within R that allow you to do that very easily. 
+To learn more about adding polygon data to plots in R and Tableau, see:  
 
-[Useful help document on plotting shapefiles in R using ggplot2](https://github.com/hadley/ggplot2/wiki/plotting-polygon-shapefiles)
-[Useful help document on plotting polygons in Tableau](http://kb.tableau.com/articles/knowledgebase/tableau-polygons-arcgis-shapefiles)
+- [Useful help document on plotting shapefiles in R using ggplot2](https://github.com/hadley/ggplot2/wiki/plotting-polygon-shapefiles)
+- [Useful help document on plotting polygons in Tableau](http://kb.tableau.com/articles/knowledgebase/tableau-polygons-arcgis-shapefiles)
+
+In this overview, I'll walk you through the process of manipulating a shapefile for use in R and Tableau. The steps are:
+1. Import R packages to deal with spatial data
+2. Load in an ESRI shapefile
+3. Manipulate the shapefile to pull out the needed info
+4. Check that it looks right by plotting
+5. Save the output as a .csv file so you can use it later.
+
 
 ### 1. Import necessary R packages. This includes:
-* **[dplyr]()**: general functions for manipulating data.  My second favorite package in R.
-* **[tidyr]()**: another data wrangling package; needed if you plan to merge any new data to your shapefile (for instance, to use values for a choropleth, which is a map-based heatmap)
-* **[rgdal]()**: functions to import and manipulate data
-* **[ggplot]()**: contains function to convert shapefiles into lat/lon coordinates. Also an amazingly powerful plotting package for R, and my favourite R package.
+- **[dplyr](https://github.com/hadley/dplyr)**: general functions for manipulating data.  My second favorite package in R.
+- **[rgdal](http://rgdal.sourceforge.net/)**: functions to import and manipulate spatial data
+- **[maptools](https://cran.r-project.org/web/packages/maptools/index.html)**: functions to import and manipulate spatial data
+- **[rgeos](https://cran.r-project.org/web/packages/rgeos/index.html)**: functions to manipulate spatial data
+- **[ggplot](ggplot2.org)**: contains function to convert shapefiles into lat/lon coordinates. Also an amazingly powerful plotting package for R, and my favourite R package.
 
 
-### 2. Import your data
+```{r importLibs}
+pkgs = c('dplyr', 'rgdal', 'maptools', 'rgeos', 'ggplot2')
 
-```{r importData}
+# Check if the packages have been installed.`
+alreadyInstalled = installed.packages()[,'Package']
+
+toInstall = pkgs[!pkgs %in% alreadyInstalled]
+
+# Install anything that isn't already installed.
+if(length(toInstall > 0)) { 
+  print(paste0('Installing these packages: ', toInstall))
+  
+  install.packages(toInstall)
+}
+
 library(rgdal)
 library(maptools)
 library(rgeos)
-library(plyr)
+library(dplyr)
 library(ggplot2)
+```
 
+### 2. Import your data
+In this example, we're going to pull out the data for the Administrative 1 units for Cambodia and a layer containing all the water bodies.
+```{r importRaw}
+
+# --- CAMBODIA ADM1 ---
 # Set your working directory to the folder that contains your data
 setwd('~/Documents/USAID/mini projects/tableaupolygonsfromshapefiles/khm_admbnda_adm1_gov')
 
 # the dsn argument of '.' says to look for the layer in the current directory.
 rawAdm1 = rgdal::readOGR(dsn=".", layer="khm_admbnda_adm1_gov")
 
-# pull out the row names from the data and save it as a new column called 'id'
-rawAdm1@data$id = rownames(rawAdm1@data)
 
-
-adm1_points = ggplot2::fortify(rawAdm1, region="id")
-adm1_df = plyr::join(adm1_points, rawAdm1@data, by="id")
-
-write.csv(adm1_df, '~/Documents/USAID/mini projects/tableaupolygonsfromshapefiles/khm_admbnda_adm1_gov_tableau.csv')
-
-
-
+# --- CAMBODIA BODIES OF WATER ---
 setwd('~/Documents/USAID/mini projects/tableaupolygonsfromshapefiles/khm_WatrcrsA_wfp/')
 
 # the dsn argument of '.' says to look for the layer in the current directory.
 rawLakes = rgdal::readOGR(dsn=".", layer="khm_WatrcrsA_wfp")
 
+```
+
+Shapefiles have five components:
+* **data**: a table containing the associated data with the polygons, so things like the name of the polygons and any data you've added to the file.
+* **polygons**: a list of the coordinates of the polygons 
+* **plotOrder**: the order in which to plot the polygons. If your polygons overlap each other, obviously becomes very important.
+* **bbox**: the bounding box for the data (minimum and maximum lat and lon of the data)
+* **proj4string**: the type of projection for the data. This'll be important.
+
+
+### 3. The obnoxious part: reprojecting the data
+So... sadly, before we pull out the lat/lon coordiantes from the files, there's a bit more work that needs to be done, unless you've set things up in ArcGIS before hand.  R and ArcGIS can deal with any projection system/units, but Tableau is more limited. Tableau needs the lat/lon coordinates to be in a **geographic coordinate system using decimal latitude and longitude units, such as GCS NAD 1983.**
+
+#### First, let's check the projection of our data.
+```{r checkProjections}
+summary(rawAdm1)
+
+summary(rawLakes)
+```
+
+rawAdm1 is projected ('Is projected: TRUE') and is in units of 'm'. This won't work for Tableau, so we will fix this using the `rgdal` package.
+```{r changeProjections}
+adm1_decimal = spTransform(rawAdm1, CRS("+proj=longlat"))
+```
+
+#### Converting polygon points to lat/lon coordinates.
+Now that is settled, we can pull out the rest of the data we need: the polygon coordinates, which we will merge to the original underlying data.
+```{r pullData}
+# --- CAMBODIA ---
+# pull out the row names from the data and save it as a new column called 'id'
+adm1_decimal@data$id = rownames(adm1_decimal@data)
+
+# Convert the shape polygons into a series of lat/lon coordinates.
+adm1_points = ggplot2::fortify(adm1_decimal, region="id")
+
+# Merge the polygon lat/lon points with the original data
+adm1_df = dplyr::left_join(adm1_points, adm1_decimal@data, by="id")
+
+# --- LAKES ---
 # pull out the row names from the data and save it as a new column called 'id'
 rawLakes@data$id = rownames(rawLakes@data)
 
 
 lakes_points = ggplot2::fortify(rawLakes, region="id")
-lakes_df = plyr::join(lakes_points, rawLakes@data, by="id")
-
-
+lakes_df = dplyr::left_join(lakes_points, rawLakes@data, by="id")
 
 ```
 
-Shapefiles have four components:
-* The data
-* 
+Now our data is in a nice tabular format with `long` and `lat` as separate columns:
+```{r viewData}
+kable(head(adm1_df))
 
-```{r projections}
-
+kable(head(lakes_df))
 ```
 
 
+### Pulling out the names of each of the polygons.
+We also might want to label each polygon with its name. That data is located in two places: the name is within the @data part of the raw shapefile, and we can use the function `coordinates` to find out the centroid of each polygon.
 ```{r names}
 
+# Find the coordinates of the centroids, put it into a data frame, and rename the names of the columns.
+adm1_centroids = data.frame(coordinates(adm1_decimal)) %>% 
+  rename(long = X1, lat = X2)
+
+adm1_centroids = cbind(adm1_centroids,
+                       HRName = adm1_decimal@data$HRName) # The name of the province is in the HRName variables.
 ```
 
+### Adding extra data to the dataframe
+You might have additional data that you want to bind to your dataframe, for instance to create a choropleth where each polygon is colored by another value. For example, you might want to plot the malaria incidence rate of each of the 25 provinces. You can easily merge data together using the function `left_join`. I don't have real data, so I'll make some fake data.
 
+To merge the data, you'll need to have a common ID. In this case, I'll use the names of the provinces, which is located in the raw shapefile in the variable `HRName`.
 ```{r appendingData}
+# Extract the names of the provinces
+fakeData = data.frame(HRName = adm1_decimal@data$HRName)
+
+# generate some random data
+fakeData = fakeData %>% 
+  mutate(fakeIndicator = sample(1:100,1))
+
+# merge the data together
+adm1_df = left_join(adm1_df, fakeData, by = 'HRName')
 
 ```
 
 
-### Building up a plot in ggplot2
+## 4. Checking the imported and manipulated data looks correct
 To check that we have what we want, we can plot the file in R using ggplot, quite possibly the most amazing plotting package ever built.  
 
 ggplot is built using the [Grammar of Graphics](http://www.amazon.com/The-Grammar-Graphics-Statistics-Computing/dp/0387245448), where every element of a plot is built up using a series of marks-- basic elements that can be combined to greater effect. So, for example, a bar graph is a series of rectangles that combine to form a bar graph. In the case of a shapefile of polygon data, as you might expect, we'll tell ggplot that we have a group of polygons to plot.
 
 These polygons will be made up of a series of coordinates, with the x being longitude, y being latitude, and will be grouped according to the 'group' variable in our new data frame. The group variable is just a running numbered list of which polygon those coordinates belong to.
 
-In ggplot, those are given to the function by defining the aesthetics within `aes()`. What's great about ggplot is that every component is built up on top of each other, simply by stringing functions together using `+`.  It makes it really powerful to add complexity.  Here, we define where the data is using `ggplot` and `aes`, tell it that we want to plot them as polygons using `geom_polygon` with equal coordinates using `coord_equal`.
+In ggplot, those are given to the function by defining the aesthetics within `aes()`. What's great about ggplot is that every component is built up on top of each other, simply by stringing functions together using `+`.  It makes it a really powerful way to add complexity.  Here, we define where the data is using `ggplot` and `aes`, tell it that we want to plot them as polygons using `geom_polygon` with equal coordinates using `coord_equal`.
 ```{r plot1}
 ggplot(data = adm1_df, mapping = aes(x = long, 
-                    y = lat, 
-                    group = group)) +
+                                     y = lat, 
+                                     group = group)) +
   geom_polygon() +
   coord_equal()
 ```
@@ -113,7 +188,7 @@ ggplot(adm1_df, aes(x = long,
   coord_equal()
 ```
 
-The aesthetic value `group` is the key to making the coordinates plot in the right order and be connected correctly. If we delet that argument, bad things happen:
+The aesthetic value `group` is the key to making the coordinates plot in the right order and be connected correctly. If we delete that argument, bad things happen:
 ```{r plot3}
 ggplot(adm1_df, aes(x = long, 
                     y = lat,
@@ -133,7 +208,7 @@ ggplot(adm1_df, aes(x = long,
 ```
 
 
-Now that we have a decent plot, we can start to do some fun things and clean it up.  First, we'll get rid of the coordinate background.  ggplot has a bunch of themes that determine the aestethics of how things are plotted: are there grid lines, axes, backgrounds, legends, text, etc. ... and how are they formatted.  There are also preset themes that you can call; here, we'll use `theme_void()`, which is essentially a blank background with a legend. The legend is somewhat meaningless here since we're just coloring the different regions, but would be useful in a traditional choropleth (think heatmap for a map). You can customize all the settings using the `theme` function.
+Now that we have a decent plot, we can start to do some fun things and clean it up.  First, we'll get rid of the coordinate background.  ggplot has a bunch of themes that determine the aestethics of how things are plotted: what's the format of grid lines, axes, backgrounds, legends, text, ....  There are also preset themes that you can call; here, we'll use `theme_void()`, which is essentially a blank background with a legend. The legend is somewhat meaningless here since we're just coloring the different regions, but would be useful in a traditional choropleth (think heatmap for a map). You can customize all the settings using the `theme` function.
 ```{r plot5}
 ggplot(adm1_df, aes(x = long, 
                     y = lat, 
@@ -145,9 +220,9 @@ ggplot(adm1_df, aes(x = long,
 ```
 
 
-Next, we can start to add in other layers of complexity. If we have another GIS layer with the lakes and rivers, we can add it on top of the original plot. To do that, we add another `geom_polygon` layer, but we'll need to specify that the underlying data source is different.  ggplot will assume the aesthetics are the same as the main plot unless you say otherwise.
+Next, we can start to add in other layers of complexity. If we have another GIS layer with the lakes and rivers, we can add it on top of the original plot. To do that, we add another `geom_polygon` layer, but we'll need to specify that the underlying data source is different (`lakes_df`).  ggplot will assume the aesthetics are the same as the main plot unless you say otherwise. We'll also make all the admin units grey so the map is less busy.
 
-_Note: the lakes layer is complicated so it'll take awhile to plot.
+_Note: the lakes layer is complicated so it'll take awhile to plot._
 ```{r plot6}
 ggplot(adm1_df, aes(x = long, 
                     y = lat, 
@@ -155,9 +230,71 @@ ggplot(adm1_df, aes(x = long,
   geom_polygon(fill = 'grey') +
   coord_equal() +
   theme_void() + 
-  geom_polygon(data = lakes_df, fill = 'black') # water should be blue, huh?
+  geom_polygon(data = lakes_df, fill = 'dodgerblue') # water should be blue, huh?
 ```
 
-In ggplot, the items are plotted in the order they appear, so if we switch the lakes layer and the Adm1 layer, we'd hide the lakes.
+In ggplot, the items are plotted in the order they appear, so if we switch the lakes layer and the Adm1 layer, we'd hide the rivers.
+```{r plot7}
+ggplot(adm1_df, aes(x = long, 
+                    y = lat, 
+                    group = group)) +
+  geom_polygon(data = lakes_df, fill = 'dodgerblue') +
+  geom_polygon(fill = 'grey') +
+  coord_equal() +
+  theme_void()
 
-We can also add a border around the provinces by adding a `geom_line` layer
+```
+
+We can also add a border around the provinces by adding a `geom_path` layer:
+```{r plot8}
+ggplot(adm1_df, aes(x = long, 
+                    y = lat, 
+                    group = group)) +
+  geom_polygon(fill = 'grey') +
+  coord_equal() +
+  theme_void() + 
+  geom_polygon(data = lakes_df, fill = 'dodgerblue') +
+  geom_path(colour = '#525252', size = 0.1)  # size is in points, colour is most conveniently given as a hexadecimal color value.
+```
+
+And lastly, we'll add the names of the provinces by adding a `geom_text` layer. `geom_text` has an additional required argument within `aes`: `label`, which specifies what variable contains the text we want to display.
+```{r plot9}
+ggplot(adm1_df, aes(x = long,
+                    y = lat,
+                    group = group)) +
+  geom_polygon(fill = 'grey') +
+  coord_equal() +
+  theme_void() +
+  geom_polygon(data = lakes_df, fill = 'dodgerblue') +
+  geom_path(colour = '#525252', size = 0.1) +
+  geom_text(aes(label = label, group = 1), # there's no group variable in the data frame, so set it to be a dummy variable.
+            data = adm1_centroids,
+            size = 2,
+            colour = '#525252') # set label to be the 'label' variable within adm1_ centroids; size is in mm
+```
+
+Tying it all together, we can make a choropleth using the random data we generated. We will change the `fill` argument within the aesthetics to use our `fakeIndicator` data.
+```{r plot10}
+ggplot(adm1_df, aes(x = long,
+                    y = lat)) +
+  geom_polygon(aes(group = group, 
+                    fill = fakeIndicator)) +
+  coord_equal() +
+  theme_void() +
+  geom_polygon(data = lakes_df, fill = 'dodgerblue') +
+  geom_path(colour = '#525252', size = 0.1) +
+  geom_text(aes(label = label), # there's no group variable in the data frame, so set it to be a dummy variable.
+            data = adm1_centroids,
+            size = 2,
+            colour = '#525252') # set label to be the 'label' variable within adm1_ centroids; size is in mm
+```
+
+### 5. Save everything!
+```{r exportData}
+
+# Save the coordinates as a .csv file
+write.csv(adm1_df, '~/Documents/USAID/mini projects/tableaupolygonsfromshapefiles/khm_admbnda_adm1_gov_tableau.csv')
+
+write.csv(lakes_df, '~/Documents/USAID/mini projects/tableaupolygonsfromshapefiles/khm_admbnda_adm1_gov_tableau.csv')
+```
+
