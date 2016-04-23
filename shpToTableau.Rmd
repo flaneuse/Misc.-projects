@@ -32,6 +32,7 @@ In this overview, I'll walk you through the process of manipulating a shapefile 
 - **[maptools](https://cran.r-project.org/web/packages/maptools/index.html)**: functions to import and manipulate spatial data
 - **[rgeos](https://cran.r-project.org/web/packages/rgeos/index.html)**: functions to manipulate spatial data
 - **[ggplot](ggplot2.org)**: contains function to convert shapefiles into lat/lon coordinates. Also an amazingly powerful plotting package for R, and my favourite R package.
+- **[RColorBrewer](https://cran.r-project.org/web/packages/RColorBrewer/index.html)**: library of color palettes developed by Cynthia Brewer
 
 
 ```{r importLibs}
@@ -86,6 +87,8 @@ Shapefiles have five components:
 
 ### 3. The obnoxious part: reprojecting the data
 So... sadly, before we pull out the lat/lon coordiantes from the files, there's a bit more work that needs to be done, unless you've set things up in ArcGIS before hand.  R and ArcGIS can deal with any projection system/units, but Tableau is more limited. Tableau needs the lat/lon coordinates to be in a **geographic coordinate system using decimal latitude and longitude units, such as GCS NAD 1983.**
+
+Projections are complicated, but a for a decent overview see [here](http://resources.esri.com/help/9.3/arcgisengine/dotnet/89b720a5-7339-44b0-8b58-0f5bf2843393.htm#TypesCoordSys).
 
 #### First, let's check the projection of our data.
 ```{r checkProjections}
@@ -152,6 +155,7 @@ fakeData = data.frame(HRName = adm1_decimal@data$HRName)
 
 # generate some random data
 fakeData = fakeData %>% 
+  rowwise() %>% 
   mutate(fakeIndicator = sample(1:100,1))
 
 # merge the data together
@@ -260,14 +264,15 @@ ggplot(adm1_df, aes(x = long,
 And lastly, we'll add the names of the provinces by adding a `geom_text` layer. `geom_text` has an additional required argument within `aes`: `label`, which specifies what variable contains the text we want to display.
 ```{r plot9}
 ggplot(adm1_df, aes(x = long,
-                    y = lat,
-                    group = group)) +
-  geom_polygon(fill = 'grey') +
+                    y = lat)) +
+  geom_polygon(aes(group = group, 
+                    fill = fakeIndicator)) +
   coord_equal() +
   theme_void() +
-  geom_polygon(data = lakes_df, fill = 'dodgerblue') +
-  geom_path(colour = '#525252', size = 0.1) +
-  geom_text(aes(label = label, group = 1), # there's no group variable in the data frame, so set it to be a dummy variable.
+  geom_polygon(aes(group = group),
+               data = lakes_df, fill = 'dodgerblue') +
+  geom_path(aes(group = group), colour = '#525252', size = 0.1) +
+  geom_text(aes(label = label), 
             data = adm1_centroids,
             size = 2,
             colour = '#525252') # set label to be the 'label' variable within adm1_ centroids; size is in mm
@@ -287,6 +292,24 @@ ggplot(adm1_df, aes(x = long,
             data = adm1_centroids,
             size = 2,
             colour = '#525252') # set label to be the 'label' variable within adm1_ centroids; size is in mm
+```
+
+You can then adjust the scale of the indicator data using one of the functions that start with `scale_fill...`. We'll use `scale_fill_brewer` to use [Cynthia Brewer's Color Scales](colorbrewer2.org).
+```{r plot11}
+ggplot(adm1_df, aes(x = long,
+                    y = lat)) +
+  geom_polygon(aes(group = group, 
+                    fill = fakeIndicator)) +
+  coord_equal() +
+  theme_void() +
+  geom_polygon(aes(group = group),
+               data = lakes_df, fill = 'dodgerblue') +
+  geom_path(aes(group = group), colour = '#525252', size = 0.1) +
+  geom_text(aes(label = label), 
+            data = adm1_centroids,
+            size = 2,
+            colour = '#525252') + # set label to be the 'label' variable within adm1_ centroids; size is in mm
+  scale_fill_gradientn(colours = brewer.pal(9, 'YlGnBu'))
 ```
 
 ### 5. Save everything!
