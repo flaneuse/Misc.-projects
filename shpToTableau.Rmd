@@ -80,11 +80,12 @@ rawLakes = rgdal::readOGR(dsn=".", layer="khm_WatrcrsA_wfp")
 ```
 
 Shapefiles have five components:
-* **data**: a table containing the associated data with the polygons, so things like the name of the polygons and any data you've added to the file.
-* **polygons**: a list of the coordinates of the polygons 
-* **plotOrder**: the order in which to plot the polygons. If your polygons overlap each other, obviously becomes very important.
-* **bbox**: the bounding box for the data (minimum and maximum lat and lon of the data)
-* **proj4string**: the type of projection for the data. This'll be important.
+
+- **data**: a table containing the associated data with the polygons, so things like the name of the polygons and any data you've added to the file.
+- **polygons**: a list of the coordinates of the polygons 
+- **plotOrder**: the order in which to plot the polygons. If your polygons overlap each other, obviously becomes very important.
+- **bbox**: the bounding box for the data (minimum and maximum lat and lon of the data)
+- **proj4string**: the type of projection for the data. This'll be important.
 
 
 ### 3. The obnoxious part: reprojecting the data
@@ -94,17 +95,21 @@ Projections are complicated, but a for a decent overview see [here](http://resou
 
 #### First, let's check the projection of our data.
 ```{r checkProjections}
+is.projected(rawAdm1)
 summary(rawAdm1)
 
+is.projected(rawLakes)
 summary(rawLakes)
 ```
 
-rawAdm1 is projected ('Is projected: TRUE') and is in units of 'm'. This won't work for Tableau, so we will fix this using the `rgdal` package.
+rawAdm1 is projected ('Is projected: TRUE') and is in units of 'm'. This won't work for Tableau, so we will fix this using the `rgdal` package and transform it into a geographic coordinate system.
 ```{r changeProjections}
-adm1_decimal = spTransform(rawAdm1, CRS("+proj=longlat"))
+adm1_decimal = spTransform(rawAdm1, CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"))
+
+lakes_decimal = spTransform(rawLakes, CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"))
 ```
 
-#### Converting polygon points to lat/lon coordinates.
+### 4. Converting polygon points to lat/lon coordinates.
 Now that is settled, we can pull out the rest of the data we need: the polygon coordinates, which we will merge to the original underlying data.
 ```{r pullData}
 # --- CAMBODIA ---
@@ -119,11 +124,11 @@ adm1_df = dplyr::left_join(adm1_points, adm1_decimal@data, by="id")
 
 # --- LAKES ---
 # pull out the row names from the data and save it as a new column called 'id'
-rawLakes@data$id = rownames(rawLakes@data)
+lakes_decimal@data$id = rownames(lakes_decimal@data)
 
 
-lakes_points = ggplot2::fortify(rawLakes, region="id")
-lakes_df = dplyr::left_join(lakes_points, rawLakes@data, by="id")
+lakes_points = ggplot2::fortify(lakes_decimal, region="id")
+lakes_df = dplyr::left_join(lakes_points, lakes_decimal@data, by="id")
 
 ```
 
@@ -166,7 +171,7 @@ adm1_df = left_join(adm1_df, fakeData, by = 'HRName')
 ```
 
 
-## 4. Checking the imported and manipulated data looks correct
+## 5. Checking the imported and manipulated data looks correct
 To check that we have what we want, we can plot the file in R using ggplot, quite possibly the most amazing plotting package ever built.  
 
 ggplot is built using the [Grammar of Graphics](http://www.amazon.com/The-Grammar-Graphics-Statistics-Computing/dp/0387245448), where every element of a plot is built up using a series of marks-- basic elements that can be combined to greater effect. So, for example, a bar graph is a series of rectangles that combine to form a bar graph. In the case of a shapefile of polygon data, as you might expect, we'll tell ggplot that we have a group of polygons to plot.
@@ -317,7 +322,7 @@ ggplot(adm1_df, aes(x = long,
 
 Obviously, we can clean this up and make it better by changing the font color so it's different based on the underlying fill color, but it's a decent start.
 
-### 5. Save everything!
+### 6. Save everything!
 ```{r exportData}
 
 # Save the coordinates as a .csv file
