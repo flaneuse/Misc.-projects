@@ -3,6 +3,7 @@ title: "Convert .shp file for Tableau or R"
 author: "Laura Hughes"
 date: "April 20, 2016"
 output: html_document
+toc_float: TRUE 
 ---
 
 ```{r setup, include=FALSE}
@@ -36,7 +37,7 @@ In this overview, I'll walk you through the process of manipulating a shapefile 
 
 
 ```{r importLibs}
-pkgs = c('dplyr', 'rgdal', 'maptools', 'rgeos', 'ggplot2')
+pkgs = c('dplyr', 'rgdal', 'maptools', 'rgeos', 'ggplot2', 'RColorBrewer')
 
 # Check if the packages have been installed.`
 alreadyInstalled = installed.packages()[,'Package']
@@ -55,6 +56,7 @@ library(maptools)
 library(rgeos)
 library(dplyr)
 library(ggplot2)
+library(RColorBrewer)
 ```
 
 ### 2. Import your data
@@ -265,14 +267,13 @@ And lastly, we'll add the names of the provinces by adding a `geom_text` layer. 
 ```{r plot9}
 ggplot(adm1_df, aes(x = long,
                     y = lat)) +
-  geom_polygon(aes(group = group, 
-                    fill = fakeIndicator)) +
+  geom_polygon(aes(group = group), fill = 'grey') +
   coord_equal() +
   theme_void() +
   geom_polygon(mapping = aes(group = group),
                data = lakes_df, fill = 'dodgerblue') +
   geom_path(aes(group = group), colour = '#525252', size = 0.1) +
-  geom_text(aes(label = label), 
+  geom_text(aes(label = HRName), 
             data = adm1_centroids,
             size = 2,
             colour = '#525252') # set label to be the 'label' variable within adm1_ centroids; size is in mm
@@ -283,12 +284,14 @@ Tying it all together, we can make a choropleth using the random data we generat
 ggplot(adm1_df, aes(x = long,
                     y = lat)) +
   geom_polygon(aes(group = group, 
-                    fill = fakeIndicator)) +
+                   fill = fakeIndicator)) +
   coord_equal() +
   theme_void() +
-  geom_polygon(data = lakes_df, fill = 'dodgerblue') +
-  geom_path(colour = '#525252', size = 0.1) +
-  geom_text(aes(label = label), # there's no group variable in the data frame, so set it to be a dummy variable.
+  geom_polygon(aes(group = group),
+               data = lakes_df, fill = 'dodgerblue') +
+  geom_path(aes(group = group),
+            colour = '#525252', size = 0.1) +
+  geom_text(aes(label = HRName), # there's no group variable in the data frame, so set it to be a dummy variable.
             data = adm1_centroids,
             size = 2,
             colour = '#525252') # set label to be the 'label' variable within adm1_ centroids; size is in mm
@@ -299,18 +302,19 @@ You can then adjust the scale of the indicator data using one of the functions t
 ggplot(adm1_df, aes(x = long,
                     y = lat)) +
   geom_polygon(aes(group = group, 
-                    fill = fakeIndicator)) +
+                   fill = fakeIndicator)) +
   coord_equal() +
   theme_void() +
   geom_polygon(aes(group = group),
                data = lakes_df, fill = 'dodgerblue') +
   geom_path(aes(group = group), colour = '#525252', size = 0.1) +
-  geom_text(aes(label = label), 
+  geom_text(aes(label = HRName), 
             data = adm1_centroids,
             size = 2,
             colour = '#525252') + # set label to be the 'label' variable within adm1_ centroids; size is in mm
   scale_fill_gradientn(colours = brewer.pal(9, 'YlGnBu'))
 ```
+
 Obviously, we can clean this up and make it better by changing the font color so it's different based on the underlying fill color, but it's a decent start.
 
 ### 5. Save everything!
