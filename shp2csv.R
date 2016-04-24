@@ -1,5 +1,18 @@
 
 # load packages -----------------------------------------------------------
+pkgs = c('dplyr', 'rgdal', 'maptools', 'rgeos', 'ggplot2', 'RColorBrewer')
+
+# Check if the packages have been installed.`
+alreadyInstalled = installed.packages()[,'Package']
+
+toInstall = pkgs[!pkgs %in% alreadyInstalled]
+
+# Install anything that isn't already installed.
+if(length(toInstall > 0)) { 
+  print(paste0('Installing these packages: ', toInstall))
+  
+  install.packages(toInstall)
+}
 
 library(rgdal)
 library(maptools)
