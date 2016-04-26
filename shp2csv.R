@@ -57,7 +57,7 @@ shp2csv = function(workingDir = getwd(),
   # Merge the polygon lat/lon points with the original data
   df = dplyr::left_join(poly_points, projectedShp@data, by="id")
   
-
+  
   # Pull out the centroids and the associated names.
   centroids = data.frame(coordinates(projectedShp)) %>% 
     rename(long = X1, lat = X2)
@@ -144,6 +144,7 @@ plotMap(adm1_df)
 # Cambodia Adm2 data ------------------------------------------------------
 adm2 = shp2csv(workingDir = '~/Documents/USAID/mini projects/tableaupolygonsfromshapefiles/khm_admbnda_adm2_gov',
                layerName = "khm_admbnda_adm2_gov",
+               labelVar = 'HRName',
                exportData = TRUE)
 
 adm2_df = adm2$df
@@ -152,8 +153,9 @@ plotMap(adm2_df)
 
 # Cambodia Adm3 data ------------------------------------------------------
 adm3 = shp2csv(workingDir = '~/Documents/USAID/mini projects/tableaupolygonsfromshapefiles/khm_admbnda_adm3_gov',
-                  layerName = "khm_admbnda_adm3_gov",
-                  exportData = TRUE)
+               layerName = "khm_admbnda_adm3_gov",
+               labelVar = 'HRName',
+               exportData = TRUE)
 
 adm3_df = adm3$df
 

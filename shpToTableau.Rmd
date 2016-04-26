@@ -2,8 +2,9 @@
 title: "Convert .shp file for Tableau or R"
 author: "Laura Hughes"
 date: "April 20, 2016"
-output: html_document
-toc_float: TRUE 
+output: pdf_document
+toc: yes
+toc_float: yes
 ---
 
 ```{r setup, include=FALSE}
@@ -20,11 +21,13 @@ To learn more about adding polygon data to plots in R and Tableau, see:
 - [Useful help document on plotting polygons in Tableau](http://kb.tableau.com/articles/knowledgebase/tableau-polygons-arcgis-shapefiles)
 
 In this overview, I'll walk you through the process of manipulating a shapefile for use in R and Tableau. The steps are:
+
 1. Import R packages to deal with spatial data
 2. Load in an ESRI shapefile
-3. Manipulate the shapefile to pull out the needed info
-4. Check that it looks right by plotting
-5. Save the output as a .csv file so you can use it later.
+3. Reproject the data
+4. Manipulate the shapefile to pull out the needed info
+5. Check that it looks right by plotting
+6. Save the output as a .csv file so you can use it later.
 
 
 ### 1. Import necessary R packages. This includes:
@@ -296,13 +299,13 @@ ggplot(adm1_df, aes(x = long,
                data = lakes_df, fill = 'dodgerblue') +
   geom_path(aes(group = group),
             colour = '#525252', size = 0.1) +
-  geom_text(aes(label = HRName), # there's no group variable in the data frame, so set it to be a dummy variable.
+  geom_text(aes(label = HRName), 
             data = adm1_centroids,
             size = 2,
-            colour = '#525252') # set label to be the 'label' variable within adm1_ centroids; size is in mm
+            colour = '#525252') # set label to be the 'HRName' variable within adm1_ centroids; size is in mm
 ```
 
-You can then adjust the scale of the indicator data using one of the functions that start with `scale_fill...`. We'll use `scale_fill_brewer` to use [Cynthia Brewer's Color Scales](colorbrewer2.org).
+You can then adjust the scale of the indicator data using one of the functions that start with `scale_fill...`. We'll use `scale_fill_gradeientn` and feed in one of [Cynthia Brewer's Color Scales](colorbrewer2.org).
 ```{r plot11}
 ggplot(adm1_df, aes(x = long,
                     y = lat)) +
