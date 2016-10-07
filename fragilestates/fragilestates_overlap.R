@@ -26,7 +26,7 @@ x = df %>% filter(coverage == 'Coverage') %>% slice(1:20)
 
 y = data.frame(x = 1:20, y = 1:20, r = x$pop/1e6)
 
-z = circleLayout(y, xlim = 20, ylim = 20)
+z = circleLayout(y, xlim = 100, ylim = 100)
 
 dat = circlePlotData(z$layout)
 
@@ -37,8 +37,9 @@ ggplot(dat, aes(x = x, y = y, group = id,
   scale_size_identity()
 
 
-ggplot(z$layout, aes(x = x, y = y, size = r, fill = r)) +
+ggplot(res$layout, aes(x = x, y = y, size = r*2.25, fill = r)) +
   geom_point(shape = 21, alpha = 0.3) +
+  coord_equal(xlim = limits, ylim = limits) +
   scale_fill_gradientn(colours = RColorBrewer::brewer.pal(9, 'YlGnBu')) +
   scale_size_identity()
 
@@ -47,8 +48,4 @@ ggplot(z$layout, aes(x = x, y = y, size = r, fill = r)) +
 ggplot(dat) + 
   geom_polygon(aes(x, y, group=id), colour="brown", fill="burlywood", alpha=0.3) +
   coord_equal(xlim=limits, ylim=limits) +
-  theme_bw() +
-  theme(axis.text=element_blank(),
-        axis.ticks=element_blank(),
-        axis.title=element_blank()) +
-  labs(title=title)
+  theme_bw() 
