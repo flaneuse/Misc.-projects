@@ -56,6 +56,11 @@ untidy = df %>%
   separate(baseline_CI, into = c('baseline_lb', 'baseline_ub'), sep = ' – ') %>% 
   separate(interim_CI, into = c('interim_lb', 'interim_ub'), sep = ' – ')
 
+tidy = tidy %>% 
+  mutate(ci_cpy = CI) %>% 
+  rowwise() %>% 
+  separate(CI, into = c('lb', 'ub'), sep = ' – ')
+
 
 # stunting plots ----------------------------------------------------------
 stunting = est %>% filter(indicator %like% 'stunt', !disaggregation %like% 'All') %>% 
