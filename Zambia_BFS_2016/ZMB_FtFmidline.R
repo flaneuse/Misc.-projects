@@ -13,12 +13,19 @@
 # setup, load packages ----------------------------------------------------
 base_dir = '~/Documents/USAID/mini projects/Zambia FtF changes - (BFS)/'
 
+colorFemale = "#9483BD"
+colorMale = "#27aae1"
+
+size_dot = 5
+alpha_ci = 0.25
+
 library(readxl)
 library(dplyr)
 library(tidyr)
 library(stringr)
 library(data.table)
 library(ggplot2)
+library(llamar)
 
 # import data -------------------------------------------------------------
 
@@ -54,34 +61,52 @@ untidy = df %>%
          mid_CI = interim_CI) %>% 
   rowwise() %>% 
   separate(baseline_CI, into = c('baseline_lb', 'baseline_ub'), sep = ' – ') %>% 
-  separate(interim_CI, into = c('interim_lb', 'interim_ub'), sep = ' – ')
+  separate(interim_CI, into = c('interim_lb', 'interim_ub'), sep = ' – ') %>% 
+  mutate(baseline_lb= as.numeric(baseline_lb),
+         baseline_ub= as.numeric(baseline_ub),
+         interim_lb = as.numeric(interim_lb),
+         interim_ub = as.numeric(interim_ub))
 
 tidy = tidy %>% 
   mutate(ci_cpy = CI) %>% 
   rowwise() %>% 
-  separate(CI, into = c('lb', 'ub'), sep = ' – ')
+  separate(CI, into = c('lb', 'ub'), sep = ' – ') %>% 
+  mutate(lb = as.numeric(lb),
+         ub = as.numeric(ub))
 
 
 # stunting plots ----------------------------------------------------------
-stunting = est %>% filter(indicator %like% 'stunt', !disaggregation %like% 'All') %>% 
-  select(-year_est) %>% 
-  spread(year, est)
+stunting_target = .376 # from FTF-MS
 
-ggplot(stunting, aes(colour = disaggregation)) +
-  geom_segment(aes(x = 2012, xend = 2015, y = `2012`, yend = `2015`)) +
-  geom_point(aes(x = 2012, y = `2012`), size = 5) +
-  geom_point(aes(x = 2015, y = `2015`), size = 5) +
-  theme_bw() +
-  ylab('stunting percentage')
+
+st_tidy = tidy %>% filter(indicator %like% 'stunt') %>% 
+  select(-year_est) %>% 
+  # percent-ize
+  mutate(est = est/100,
+         lb = lb/100,
+         ub = ub/100)
+
+ggplot(st_tidy, aes(fill = disaggregation)) +
   
-ggplot(stunting, aes(colour = disaggregation)) +
-  geom_segment(aes(y = 2012, yend = 2012,x = 40.8, xend = 51.2)) +
-  geom_segment(aes(y = 2015, yend = 2015,x = 34.3, xend = 41.4)) +
-  geom_segment(aes(y = 2012, yend = 2015,x = 51.2, xend = 41.4), colour = 'grey', linetype = 2) +
-  geom_segment(aes(y = 2012, yend = 2015,x = 40.8, xend = 34.3), colour = 'grey', linetype = 2) +
-  geom_point(aes(y = 2012, x = `2012`), size = 5) +
-  geom_point(aes(y = 2015, x = `2015`), size = 5) +
-  theme_bw() +
-  scale_y_reverse() +
-  ylab('year') +
-  xlab('stunting percentage')
+  # -- CIs --
+  geom_segment(aes(x = year, xend = year, y = lb, yend = ub),
+               alpha = alpha_ci) +
+    # -- point estimate -- 
+  geom_point(aes(x = year, y = est,
+                 shape = disaggregation),
+             stroke = 0.1,
+             colour = grey90K,
+             size = size_dot) +
+  
+  # -- scales --
+  scale_y_continuous(labels = scales::percent) +
+  scale_x_continuous(breaks = c(2012, 2015), position = 'top') +
+  scale_fill_manual(values = c('All children' = grey50K, 'Female children' = colorFemale, 'Male children' = colorMale)) +
+  scale_shape_manual(values = c('All children' = 21, 'Female children' = 22, 'Male children' = 23)) +
+  
+  # -- themes --
+  theme_ygrid() +
+  theme(axis.title.y = element_blank()) +
+  ggtitle('Stunting prevalence significantly decreased in the ZOI',
+          subtitle = 'percent of stunted children under 5 years of age')
+
