@@ -17,7 +17,9 @@ colorFemale = "#9483BD"
 colorMale = "#27aae1"
 
 size_dot = 5
+stroke_dot = 0.2
 alpha_ci = 0.25
+width_ci = 2
 
 library(readxl)
 library(dplyr)
@@ -31,6 +33,10 @@ library(llamar)
 
 df = read_excel(paste0(base_dir, 'Zambia_Interim_Country_Report_9.26.16 Exec Sum table.xlsx'), 
                 na = 'NA')
+
+dhs = read_excel(paste0(base_dir, 'ZMB_DHS_malnutrition.xlsx'))
+
+# clean FTF data ----------------------------------------------------------
 
 # tidy data frame
 
@@ -74,39 +80,95 @@ tidy = tidy %>%
   mutate(lb = as.numeric(lb),
          ub = as.numeric(ub))
 
+untidy = untidy %>% 
+  ungroup() %>% 
+  mutate(sex = case_when(untidy$disaggregation %like% 'All children' ~ 'total',
+                         untidy$disaggregation %like% 'Female' ~ 'female',
+                         untidy$disaggregation %like% 'Male' ~ 'male',
+                         TRUE ~ NA_character_))
+
+tidy = tidy %>% 
+  ungroup() %>% 
+  mutate(sex = case_when(tidy$disaggregation %like% 'All children' ~ 'total',
+                         tidy$disaggregation %like% 'Female' ~ 'female',
+                         tidy$disaggregation %like% 'Male' ~ 'male',
+                         TRUE ~ NA_character_))
+
+# clean dhs ---------------------------------------------------------------
+dhs = dhs %>% 
+  mutate(est = Value/100,
+         sex = case_when(dhs$`Characteristic Label` %like% 'Total' ~ 'total',
+                         dhs$`Characteristic Label` %like% 'Female' ~ 'female',
+                         dhs$`Characteristic Label` %like% 'Male' ~ 'male',
+                         TRUE ~ NA_character_))
+
 
 # stunting plots ----------------------------------------------------------
 stunting_target = .376 # from FTF-MS
 
 
 st_tidy = tidy %>% filter(indicator %like% 'stunt') %>% 
-  select(-year_est) %>% 
+  select(year, est, lb, ub, n, sex) %>% 
   # percent-ize
   mutate(est = est/100,
          lb = lb/100,
-         ub = ub/100)
+         ub = ub/100,
+         group = 'FTF')
 
-ggplot(st_tidy, aes(fill = disaggregation)) +
+st_dhs = dhs %>% filter(Indicator %like% 'stunt') %>% 
+  select(year = `Survey Year`, est, sex) %>% 
+  mutate(group = 'DHS', lb = NA, ub = NA)
+
+st_tidy = bind_rows(st_tidy, st_dhs)
+
+st_untidy = untidy %>% filter(indicator %like% 'stunt') %>% 
+  # percent-ize
+  mutate(baseline_est = baseline_est/100,
+         interim_est = interim_est/100)
+
+
+ggplot(st_tidy, aes(fill = sex, colour = sex)) +
   
   # -- CIs --
-  geom_segment(aes(x = year, xend = year, y = lb, yend = ub),
-               alpha = alpha_ci) +
-    # -- point estimate -- 
+  # geom_segment(aes(x = year, xend = year, y = lb, yend = ub),
+  # alpha = alpha_ci, size = width_ci*100) +
+  geom_segment(aes(x = year, xend = year, y = lb, yend = ub, group = group),
+               alpha = alpha_ci, size = width_ci) +
+  
+  # -- connector --
+  geom_line(aes(x = year, y = est, group = group, linetype = group)) +
+  # geom_segment(aes(x = 2012, xend = 2015, y = baseline_est, yend = interim_est),
+  # size = 1.5,
+  # data = st_untidy
+  # ) +
+  
+  # -- point estimate -- 
   geom_point(aes(x = year, y = est,
-                 shape = disaggregation),
-             stroke = 0.1,
+                 shape = sex, group = group),
+             stroke = stroke_dot,
              colour = grey90K,
              size = size_dot) +
   
   # -- scales --
   scale_y_continuous(labels = scales::percent) +
-  scale_x_continuous(breaks = c(2012, 2015), position = 'top') +
-  scale_fill_manual(values = c('All children' = grey50K, 'Female children' = colorFemale, 'Male children' = colorMale)) +
-  scale_shape_manual(values = c('All children' = 21, 'Female children' = 22, 'Male children' = 23)) +
+  scale_x_continuous(breaks = c(1992, 2002, 2012, 2015), position = 'top') +
+  scale_colour_manual(values = c('total' = grey50K, 'female' = colorFemale, 'male' = colorMale)) +
+  scale_fill_manual(values = c('total' = grey50K, 'female' = colorFemale, 'male' = colorMale)) +
+  scale_shape_manual(values = c('total' = 21, 'female' = 22, 'male' = 23)) +
+  scale_linetype_manual(values = c('DHS' = 2, 'FTF' = 1)) +
   
   # -- themes --
   theme_ygrid() +
-  theme(axis.title.y = element_blank()) +
-  ggtitle('Stunting prevalence significantly decreased in the ZOI',
-          subtitle = 'percent of stunted children under 5 years of age')
+  theme(rect = element_rect(fill = grey10K, colour = grey25K, size = 0, linetype = 1),
+        panel.background = element_rect(fill = 'white'),
+        axis.title.y = element_blank(),
+        axis.title.x = element_text(size = 12),
+        strip.text = element_text(family = 'Lato Light', colour = grey90K, size = 14)) +
+  # -- annotation --
+  annotate(geom = 'text', label = 'DHS', x = 1992, y = 0.5, family = 'Lato Light', size = 5) +
+  annotate(geom = 'text', label = 'FTF ZOI', x = 2012, y = 0.5, family = 'Lato Light', size = 5) +
+  ggtitle('Stunting prevalence decreased in the ZOI, mirroring a national trend',
+          subtitle = 'percent of stunted children under 5 years of age')  +
+  facet_wrap(~ sex)
 
+save_plot('~/Creative Cloud Files/MAV/Projects/ZMB_FTFmidline_2016-10/stunting.pdf', width = 8, height = 4.5)
