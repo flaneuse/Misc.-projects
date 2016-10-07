@@ -171,4 +171,4 @@ ggplot(st_tidy, aes(fill = sex, colour = sex)) +
           subtitle = 'percent of stunted children under 5 years of age')  +
   facet_wrap(~ sex)
 
-save_plot('~/Creative Cloud Files/MAV/Projects/ZMB_FTFmidline_2016-10/stunting.pdf', width = 8, height = 4.5)
+save_plot('~/Creative Cloud Files/MAV/Projects/ZMB_FTFmidline_2016-10/ZMB_stunting.pdf', width = 8, height = 4.5)
