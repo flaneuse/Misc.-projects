@@ -18,6 +18,7 @@ colorMale = "#27aae1"
 
 size_dot = 5
 stroke_dot = 0.2
+stroke_line = 0.75
 alpha_ci = 0.25
 width_ci = 2
 
@@ -28,6 +29,9 @@ library(stringr)
 library(data.table)
 library(ggplot2)
 library(llamar)
+library(extrafont)
+
+loadfonts()
 
 # import data -------------------------------------------------------------
 
@@ -127,7 +131,11 @@ st_untidy = untidy %>% filter(indicator %like% 'stunt') %>%
          interim_est = interim_est/100)
 
 
-ggplot(st_tidy, aes(fill = sex, colour = sex)) +
+ggplot(st_tidy, aes(fill = sex, colour = sex, 
+                    alpha = group, size = group)) +
+  
+  # -- target --
+  geom_hline(colour = grey90K, yintercept = stunting_target, size = 0.1) + 
   
   # -- CIs --
   # geom_segment(aes(x = year, xend = year, y = lb, yend = ub),
@@ -136,24 +144,23 @@ ggplot(st_tidy, aes(fill = sex, colour = sex)) +
                alpha = alpha_ci, size = width_ci) +
   
   # -- connector --
-  geom_line(aes(x = year, y = est, group = group, linetype = group)) +
-  # geom_segment(aes(x = 2012, xend = 2015, y = baseline_est, yend = interim_est),
-  # size = 1.5,
-  # data = st_untidy
-  # ) +
+  geom_line(aes(x = year, y = est, group = group, 
+                linetype = group),
+            size = stroke_line) +
   
   # -- point estimate -- 
   geom_point(aes(x = year, y = est,
                  shape = sex, group = group),
              stroke = stroke_dot,
-             colour = grey90K,
-             size = size_dot) +
+             colour = grey90K) +
   
   # -- scales --
   scale_y_continuous(labels = scales::percent) +
   scale_x_continuous(breaks = c(1992, 2002, 2012, 2015), position = 'top') +
   scale_colour_manual(values = c('total' = grey50K, 'female' = colorFemale, 'male' = colorMale)) +
   scale_fill_manual(values = c('total' = grey50K, 'female' = colorFemale, 'male' = colorMale)) +
+  scale_alpha_discrete(range = c(0.25, 1)) + 
+  scale_size_discrete(range = c(size_dot/2, size_dot)) +
   scale_shape_manual(values = c('total' = 21, 'female' = 22, 'male' = 23)) +
   scale_linetype_manual(values = c('DHS' = 2, 'FTF' = 1)) +
   
