@@ -15,6 +15,7 @@ base_dir = '~/Documents/USAID/mini projects/Zambia FtF changes - (BFS)/'
 
 colorFemale = "#9483BD"
 colorMale = "#27aae1"
+colorTarget = '#fdae61'
 
 size_dot = 5
 stroke_dot = 0.2
@@ -135,7 +136,7 @@ ggplot(st_tidy, aes(fill = sex, colour = sex,
                     alpha = group, size = group)) +
   
   # -- target --
-  geom_hline(colour = grey90K, yintercept = stunting_target, size = 0.1) + 
+  geom_hline(colour = colorTarget, yintercept = stunting_target, size = 0.25) + 
   
   # -- CIs --
   # geom_segment(aes(x = year, xend = year, y = lb, yend = ub),
@@ -153,6 +154,10 @@ ggplot(st_tidy, aes(fill = sex, colour = sex,
                  shape = sex, group = group),
              stroke = stroke_dot,
              colour = grey90K) +
+  geom_text(aes(x = year, y = est,
+                label = round(est*100,0), group = group),
+            size = 2, family = 'Lato',
+            colour = 'white') +
   
   # -- scales --
   scale_y_continuous(labels = scales::percent) +
@@ -178,4 +183,144 @@ ggplot(st_tidy, aes(fill = sex, colour = sex,
           subtitle = 'percent of stunted children under 5 years of age')  +
   facet_wrap(~ sex)
 
-save_plot('~/Creative Cloud Files/MAV/Projects/ZMB_FTFmidline_2016-10/ZMB_stunting.pdf', width = 8, height = 4.5)
+# save_plot('~/Creative Cloud Files/MAV/Projects/ZMB_FTFmidline_2016-10/ZMB_stunting.pdf', width = 8, height = 4.5)
+
+# wasting plots ----------------------------------------------------------
+stunting_target = .025 # from FTF-MS
+
+
+st_tidy = tidy %>% filter(indicator %like% 'wast') %>% 
+  select(year, est, lb, ub, n, sex) %>% 
+  # percent-ize
+  mutate(est = est/100,
+         lb = lb/100,
+         ub = ub/100,
+         group = 'FTF')
+
+st_dhs = dhs %>% filter(Indicator %like% 'wast') %>% 
+  select(year = `Survey Year`, est, sex) %>% 
+  mutate(group = 'DHS', lb = NA, ub = NA)
+
+st_tidy = bind_rows(st_tidy, st_dhs)
+
+
+ggplot(st_tidy, aes(fill = sex, colour = sex, 
+                    alpha = group, size = group)) +
+  
+  # -- target --
+  geom_hline(colour = colorTarget, yintercept = stunting_target, size = 0.25) + 
+  
+  # -- CIs --
+  # geom_segment(aes(x = year, xend = year, y = lb, yend = ub),
+  # alpha = alpha_ci, size = width_ci*100) +
+  geom_segment(aes(x = year, xend = year, y = lb, yend = ub, group = group),
+               alpha = alpha_ci, size = width_ci) +
+  
+  # -- connector --
+  geom_line(aes(x = year, y = est, group = group, 
+                linetype = group),
+            size = stroke_line) +
+  
+  # -- point estimate -- 
+  geom_point(aes(x = year, y = est,
+                 shape = sex, group = group),
+             stroke = stroke_dot,
+             colour = grey90K) +
+  geom_text(aes(x = year, y = est,
+                label = round(est*100,0), group = group),
+            size = 2, family = 'Lato',
+            colour = 'white') +
+  
+  # -- scales --
+  scale_y_continuous(labels = scales::percent) +
+  scale_x_continuous(breaks = c(1992, 2002, 2012, 2015), position = 'top') +
+  scale_colour_manual(values = c('total' = grey50K, 'female' = colorFemale, 'male' = colorMale)) +
+  scale_fill_manual(values = c('total' = grey50K, 'female' = colorFemale, 'male' = colorMale)) +
+  scale_alpha_discrete(range = c(0.25, 1)) + 
+  scale_size_discrete(range = c(size_dot/2, size_dot)) +
+  scale_shape_manual(values = c('total' = 21, 'female' = 22, 'male' = 23)) +
+  scale_linetype_manual(values = c('DHS' = 2, 'FTF' = 1)) +
+  
+  # -- themes --
+  theme_ygrid() +
+  theme(rect = element_rect(fill = grey10K, colour = grey25K, size = 0, linetype = 1),
+        panel.background = element_rect(fill = 'white'),
+        axis.title.y = element_blank(),
+        axis.title.x = element_text(size = 12),
+        strip.text = element_text(family = 'Lato Light', colour = grey90K, size = 14)) +
+  # -- annotation --
+  annotate(geom = 'text', label = 'national (DHS)', x = 1992, y = 0.1, family = 'Lato Light', size = 5) +
+  annotate(geom = 'text', label = 'FTF ZOI', x = 2012, y = 0.1, family = 'Lato Light', size = 5) +
+  ggtitle('While nationally wasting has remained around 6% for the past 2 decades, it is lower in the ZOI',
+          subtitle = 'percent of wasted children under 5 years of age')  +
+  facet_wrap(~ sex)
+
+# underweight plots ----------------------------------------------------------
+stunting_target = .12 # from FTF-MS
+
+
+st_tidy = tidy %>% filter(indicator %like% 'underweight child') %>% 
+  select(year, est, lb, ub, n, sex) %>% 
+  # percent-ize
+  mutate(est = est/100,
+         lb = lb/100,
+         ub = ub/100,
+         group = 'FTF')
+
+st_dhs = dhs %>% filter(Indicator %like% 'under') %>% 
+  select(year = `Survey Year`, est, sex) %>% 
+  mutate(group = 'DHS', lb = NA, ub = NA)
+
+st_tidy = bind_rows(st_tidy, st_dhs)
+
+
+ggplot(st_tidy, aes(fill = sex, colour = sex, 
+                    alpha = group, size = group)) +
+  
+  # -- target --
+  geom_hline(colour = colorTarget, yintercept = stunting_target, size = 0.25) + 
+  
+  # -- CIs --
+  # geom_segment(aes(x = year, xend = year, y = lb, yend = ub),
+  # alpha = alpha_ci, size = width_ci*100) +
+  geom_segment(aes(x = year, xend = year, y = lb, yend = ub, group = group),
+               alpha = alpha_ci, size = width_ci) +
+  
+  # -- connector --
+  geom_line(aes(x = year, y = est, group = group, 
+                linetype = group),
+            size = stroke_line) +
+  
+  # -- point estimate -- 
+  geom_point(aes(x = year, y = est,
+                 shape = sex, group = group),
+             stroke = stroke_dot,
+             colour = grey90K) +
+  geom_text(aes(x = year, y = est,
+                label = round(est*100,0), group = group),
+            size = 2, family = 'Lato',
+            colour = 'white') +
+  
+  # -- scales --
+  scale_y_continuous(labels = scales::percent) +
+  scale_x_continuous(breaks = c(1992, 2002, 2012, 2015), position = 'top') +
+  scale_colour_manual(values = c('total' = grey50K, 'female' = colorFemale, 'male' = colorMale)) +
+  scale_fill_manual(values = c('total' = grey50K, 'female' = colorFemale, 'male' = colorMale)) +
+  scale_alpha_discrete(range = c(0.25, 1)) + 
+  scale_size_discrete(range = c(size_dot/2, size_dot)) +
+  scale_shape_manual(values = c('total' = 21, 'female' = 22, 'male' = 23)) +
+  scale_linetype_manual(values = c('DHS' = 2, 'FTF' = 1)) +
+  
+  # -- themes --
+  theme_ygrid() +
+  theme(rect = element_rect(fill = grey10K, colour = grey25K, size = 0, linetype = 1),
+        panel.background = element_rect(fill = 'white'),
+        axis.title.y = element_blank(),
+        axis.title.x = element_text(size = 12),
+        strip.text = element_text(family = 'Lato Light', colour = grey90K, size = 14)) +
+  # -- annotation --
+  annotate(geom = 'text', label = 'national (DHS)', x = 1992, y = 0.1, family = 'Lato Light', size = 5) +
+  annotate(geom = 'text', label = 'FTF ZOI', x = 2012, y = 0.1, family = 'Lato Light', size = 5) +
+  ggtitle('Underweight CIs are huge.',
+          subtitle = 'percent of underweight children under 5 years of age')  +
+  facet_wrap(~ sex)
