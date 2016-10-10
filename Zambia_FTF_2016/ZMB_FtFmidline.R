@@ -183,7 +183,7 @@ ggplot(st_tidy, aes(fill = sex, colour = sex,
           subtitle = 'percent of stunted children under 5 years of age')  +
   facet_wrap(~ sex)
 
-# save_plot('~/Creative Cloud Files/MAV/Projects/ZMB_FTFmidline_2016-10/ZMB_stunting.pdf', width = 8, height = 4.5)
+save_plot('~/Creative Cloud Files/MAV/Projects/ZMB_FTFmidline_2016-10/ZMB_stunting.pdf', width = 8, height = 4.5)
 
 # wasting plots ----------------------------------------------------------
 wasting_target = 0.025 # from FTF-MS
@@ -205,7 +205,7 @@ wast_tidy = bind_rows(wast_tidy, wast_dhs)
 
 
 ggplot(wast_tidy, aes(fill = sex, colour = sex, 
-                    alpha = group, size = group)) +
+                      alpha = group, size = group)) +
   
   # -- target --
   geom_hline(colour = colorTarget, yintercept = wasting_target, size = 0.25) + 
@@ -255,6 +255,8 @@ ggplot(wast_tidy, aes(fill = sex, colour = sex,
           subtitle = 'percent of wasted children under 5 years of age')  +
   facet_wrap(~ sex)
 
+save_plot('~/Creative Cloud Files/MAV/Projects/ZMB_FTFmidline_2016-10/ZMB_wasting.pdf', width = 8, height = 4.5)
+
 # underweight plots ----------------------------------------------------------
 underwt_target = 0.12 # from FTF-MS
 
@@ -275,7 +277,7 @@ under_tidy = bind_rows(under_tidy, under_dhs)
 
 
 ggplot(under_tidy, aes(fill = sex, colour = sex, 
-                    alpha = group, size = group)) +
+                       alpha = group, size = group)) +
   
   # -- target --
   geom_hline(colour = colorTarget, yintercept = underwt_target, size = 0.25) + 
@@ -324,3 +326,15 @@ ggplot(under_tidy, aes(fill = sex, colour = sex,
   ggtitle('Underweight CIs are huge.',
           subtitle = 'percent of underweight children under 5 years of age')  +
   facet_wrap(~ sex)
+
+save_plot('~/Creative Cloud Files/MAV/Projects/ZMB_FTFmidline_2016-10/ZMB_underweight.pdf', width = 8, height = 4.5)
+
+# WEIA --------------------------------------------------------------------
+weia = tidy %>% 
+  filter(indicator %like% 'Empowerment') %>% 
+  mutate(est = est/100) # percentize
+
+ggplot(weia, aes(x = est, y = disaggregation)) +
+  geom_dot() +
+  facet_wrap(year) +
+  ggtitle('The single largest gain')
