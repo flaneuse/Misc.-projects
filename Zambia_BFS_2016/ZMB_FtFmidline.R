@@ -186,10 +186,10 @@ ggplot(st_tidy, aes(fill = sex, colour = sex,
 # save_plot('~/Creative Cloud Files/MAV/Projects/ZMB_FTFmidline_2016-10/ZMB_stunting.pdf', width = 8, height = 4.5)
 
 # wasting plots ----------------------------------------------------------
-stunting_target = .025 # from FTF-MS
+wasting_target = 0.025 # from FTF-MS
 
 
-st_tidy = tidy %>% filter(indicator %like% 'wast') %>% 
+wast_tidy = tidy %>% filter(indicator %like% 'wast') %>% 
   select(year, est, lb, ub, n, sex) %>% 
   # percent-ize
   mutate(est = est/100,
@@ -197,18 +197,18 @@ st_tidy = tidy %>% filter(indicator %like% 'wast') %>%
          ub = ub/100,
          group = 'FTF')
 
-st_dhs = dhs %>% filter(Indicator %like% 'wast') %>% 
+wast_dhs = dhs %>% filter(Indicator %like% 'wast') %>% 
   select(year = `Survey Year`, est, sex) %>% 
   mutate(group = 'DHS', lb = NA, ub = NA)
 
-st_tidy = bind_rows(st_tidy, st_dhs)
+wast_tidy = bind_rows(wast_tidy, wast_dhs)
 
 
-ggplot(st_tidy, aes(fill = sex, colour = sex, 
+ggplot(wast_tidy, aes(fill = sex, colour = sex, 
                     alpha = group, size = group)) +
   
   # -- target --
-  geom_hline(colour = colorTarget, yintercept = stunting_target, size = 0.25) + 
+  geom_hline(colour = colorTarget, yintercept = wasting_target, size = 0.25) + 
   
   # -- CIs --
   # geom_segment(aes(x = year, xend = year, y = lb, yend = ub),
@@ -256,10 +256,10 @@ ggplot(st_tidy, aes(fill = sex, colour = sex,
   facet_wrap(~ sex)
 
 # underweight plots ----------------------------------------------------------
-stunting_target = .12 # from FTF-MS
+underwt_target = 0.12 # from FTF-MS
 
 
-st_tidy = tidy %>% filter(indicator %like% 'underweight child') %>% 
+under_tidy = tidy %>% filter(indicator %like% 'underweight child') %>% 
   select(year, est, lb, ub, n, sex) %>% 
   # percent-ize
   mutate(est = est/100,
@@ -267,18 +267,18 @@ st_tidy = tidy %>% filter(indicator %like% 'underweight child') %>%
          ub = ub/100,
          group = 'FTF')
 
-st_dhs = dhs %>% filter(Indicator %like% 'under') %>% 
+under_dhs = dhs %>% filter(Indicator %like% 'under') %>% 
   select(year = `Survey Year`, est, sex) %>% 
   mutate(group = 'DHS', lb = NA, ub = NA)
 
-st_tidy = bind_rows(st_tidy, st_dhs)
+under_tidy = bind_rows(under_tidy, under_dhs)
 
 
-ggplot(st_tidy, aes(fill = sex, colour = sex, 
+ggplot(under_tidy, aes(fill = sex, colour = sex, 
                     alpha = group, size = group)) +
   
   # -- target --
-  geom_hline(colour = colorTarget, yintercept = stunting_target, size = 0.25) + 
+  geom_hline(colour = colorTarget, yintercept = underwt_target, size = 0.25) + 
   
   # -- CIs --
   # geom_segment(aes(x = year, xend = year, y = lb, yend = ub),
