@@ -437,3 +437,48 @@ indicators") +
   
 
 save_plot('~/Creative Cloud Files/MAV/Projects/ZMB_FTFmidline_2016-10/ZMB_WEIA.pdf', width = 8, height = 6)
+
+# Prevalence of poverty ---------------------------------------------------
+pov_target = 0.7018 # from FTFMS
+
+ggplot() +
+  geom_point() +
+  ggtitle('Though poverty prevalence has significantly declined, the ZOI still lags relative to the rest of Zambia',
+          subtitle = 'percent of people living on less than $1.25/day (2005 PPP)')
+
+# Diet and hunger ---------------------------------------------------------
+
+
+hunger = tidy %>% 
+  filter(indicator %like% 'hunger',
+         is.na(sex)) %>% 
+  mutate(est = est/100,
+         lb = lb/100,
+         ub = ub/100)
+
+ggplot(hunger, aes(y = est, x = year)) +
+  geom_bar(aes(y = 1), stat = 'identity',
+           fill = grey20K) +
+  geom_bar(stat = 'identity', fill = brewer.pal(11, 'Spectral')[2],
+           alpha = 0.75) +
+  
+  geom_text(aes(label = paste0(round(lb*100, 0), ' - ', percent(ub,0), ' households with moderate or severe hunger')),
+            colour = brewer.pal(11, 'Spectral')[2], hjust = 1,
+            size = 4, 
+            family = 'Lato Light') +
+
+  geom_text(aes(y = 1,
+    label = paste0(round((1 - ub) * 100, 0), ' - ', percent(1 - lb,0), ' households without moderate or severe hunger')),
+            colour = grey75K, hjust = 1,
+            size = 4, 
+            family = 'Lato Light') +
+  coord_flip() +
+  scale_x_continuous(breaks = c(2012, 2015)) +
+  scale_y_continuous(labels = scales::percent) +
+  ggtitle('Though gains were made in children eating acceptable diets and dietary diversity of women, household hunger increased significantly') +
+  theme_xylab()
+
+save_plot('~/Creative Cloud Files/MAV/Projects/ZMB_FTFmidline_2016-10/ZMB_hungry.pdf', 
+          width = 7, height = 2.5)
+
+
