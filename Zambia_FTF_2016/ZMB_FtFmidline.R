@@ -16,8 +16,10 @@ base_dir = '~/Documents/USAID/mini projects/Zambia FtF changes - (BFS)/'
 colorFemale = "#9483BD"
 colorMale = "#27aae1"
 colorTarget = '#fdae61'
+colorWEIA = 'BuPu'
 
 size_dot = 5
+size_dot_weia = 8
 stroke_dot = 0.2
 stroke_line = 0.75
 alpha_ci = 0.25
@@ -31,6 +33,7 @@ library(data.table)
 library(ggplot2)
 library(llamar)
 library(extrafont)
+library(RColorBrewer)
 
 loadfonts()
 
@@ -330,11 +333,107 @@ ggplot(under_tidy, aes(fill = sex, colour = sex,
 save_plot('~/Creative Cloud Files/MAV/Projects/ZMB_FTFmidline_2016-10/ZMB_underweight.pdf', width = 8, height = 4.5)
 
 # WEIA --------------------------------------------------------------------
-weia = tidy %>% 
+weia = untidy %>% 
   filter(indicator %like% 'Empowerment') %>% 
-  mutate(est = est/100) # percentize
+  mutate(baseline_est = baseline_est/100,
+         interim_est = interim_est/100,
+         baseline_lb = baseline_lb/100,
+         baseline_ub = baseline_ub/100,
+         interim_lb = interim_lb/100,
+         interim_ub = interim_ub/100) # percentize
 
-ggplot(weia, aes(x = est, y = disaggregation)) +
-  geom_dot() +
-  facet_wrap(year) +
-  ggtitle('The single largest gain')
+weia$disaggregation = factor(weia$disaggregation,
+                             levels = rev(c("Control over use of income",
+                                        "Ownership of assets", 
+                                        "Leisure",  
+                                        "Input in productive decisions",
+                                        "Autonomy in production",
+                                        "Speaking in public", 
+                                        "Group member",                        
+                                        "Purchase, sale or transfer of assets",
+                                        "Workload",                            
+                                        "Access to and decisions on credit"   
+                                        )))
+
+
+ggplot(weia, aes(y = disaggregation)) +
+  # # -- CIs --
+  # geom_segment(aes(x = baseline_lb,
+  #                  xend = baseline_ub, 
+  #                  y = forcats::fct_reorder(disaggregation, interim_est), 
+  #                  yend = forcats::fct_reorder(disaggregation, interim_est)),
+  #              colour = grey60K,
+  #              size = 1.5,
+  #              alpha = 0.3) +
+  # geom_segment(aes(x = interim_lb,
+  #                  xend = interim_ub, 
+  #                  y = forcats::fct_reorder(disaggregation, interim_est), 
+  #                  yend = forcats::fct_reorder(disaggregation, interim_est)),
+  #              colour = grey60K,
+  #              size = 1.5,
+  #              alpha = 0.3) +
+  
+  # -- lollipop stick --
+  geom_segment(aes(x = baseline_est,
+                   xend = interim_est, 
+                   y = disaggregation, 
+                   yend = disaggregation),
+               colour = grey60K, 
+               arrow = arrow(length = unit(0.1, 'inches'),
+                             ends = 'last'),
+               size = 0.25
+               ) +
+  # -- points --
+  geom_point(aes(x = baseline_est),
+             size = size_dot_weia, 
+             shape = 21,
+             fill = 'white',
+             stroke = 0,
+             colour = grey90K) +
+  
+  geom_point(aes(x = baseline_est, 
+                 fill = baseline_est),
+             alpha = 0.2,
+             size = size_dot_weia, 
+             shape = 21,
+             stroke = 0.125,
+             colour = grey90K) +
+  geom_point(aes(x = interim_est, fill = interim_est),
+             size = size_dot_weia, 
+             shape = 22,
+             stroke = 0.125,
+             colour = grey90K) +
+
+  
+  # -- scales --
+  scale_x_continuous(limits = c(0,1), labels = scales::percent) +
+  scale_fill_gradientn(colours = brewer.pal(9, colorWEIA),
+                       limits = c(0,1)) +
+  scale_colour_gradientn(colours = brewer.pal(9, colorWEIA),
+                       limits = c(0,1)) +
+  # scale_color_text(weia$est) +
+  
+  # -- annotations --
+  ggtitle("Workload was the largest gain in women's empowerment between 2012 - 2015", 
+subtitle = "Percent of women achieving adequacy on Women’s Empowerment in Agriculture Index
+indicators") +
+  
+  geom_text(aes(x = baseline_est, 
+                colour = baseline_est,
+                label = round(baseline_est*100,0)),
+            size = 3, family = 'Lato') +
+  geom_text(aes(x = interim_est,
+                label = round(interim_est*100,0)),
+            colour = 'white',
+            size = 3, family = 'Lato') +
+  # -- themes --
+  theme_xgrid() +
+  theme(rect = element_rect(fill = grey10K, colour = grey25K, size = 0, linetype = 1),
+        panel.background = element_rect(fill = 'white'),
+        axis.title.y = element_blank(),
+        axis.text.y = element_text(size = 14),
+        axis.title.x = element_blank(),
+        strip.text = element_text(family = 'Lato Light', colour = grey90K, size = 14))
+  
+
+save_plot('~/Creative Cloud Files/MAV/Projects/ZMB_FTFmidline_2016-10/ZMB_WEIA.pdf', width = 8, height = 6)
