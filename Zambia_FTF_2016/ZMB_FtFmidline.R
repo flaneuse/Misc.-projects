@@ -510,3 +510,35 @@ ggplot(dd, aes(x = year, y = est)) +
         axis.title.y = element_blank())
 
 save_plot('~/Creative Cloud Files/MAV/Projects/ZMB_FTFmidline_2016-10/ZMB_womenDD.pdf', width = 5, height = 7)
+
+
+# women’s dietary diversity -----------------------------------------------
+
+mad = tidy %>% 
+  filter(indicator %like% 'min',
+         sex == 'total') %>% 
+  mutate(est = est/100)
+
+ggplot(mad, aes(x = year, y = est)) +
+  geom_area(aes(y = 1), fill = grey20K) +
+  geom_area(stat = 'identity', fill = brewer.pal(11, 'Spectral')[10], 
+            alpha = 0.75) +
+  geom_point(fill = brewer.pal(11, 'Spectral')[10],
+             size = 8,
+             stroke = stroke_dot,
+             colour = grey90K,
+             shape = 21,
+             alpha = 1) +
+  geom_text(aes(x = year, y = est,
+                label = percent(est, 0)),
+            size = 3.25, family = 'Lato',
+            colour = 'white') +
+  scale_x_continuous(breaks = c(2012, 2015), position = 'top'
+  ) +
+  scale_y_continuous(labels = scales::percent) +
+  ggtitle('percent of children 6-23 months receiving a minimum acceptable diet') +
+  theme_ygrid() +
+  theme(panel.ontop = TRUE,
+        axis.title.y = element_blank())
+
+save_plot('~/Creative Cloud Files/MAV/Projects/ZMB_FTFmidline_2016-10/ZMB_kidsMAD.pdf', width = 5, height = 7)
