@@ -415,7 +415,7 @@ ggplot(weia, aes(y = disaggregation)) +
   
   # -- annotations --
   ggtitle("Workload was the largest gain in women's empowerment between 2012 - 2015", 
-subtitle = "Percent of women achieving adequacy on Women’s Empowerment in Agriculture Index
+subtitle = "percent of women achieving adequacy on Women’s Empowerment in Agriculture Index
 indicators") +
   
   geom_text(aes(x = baseline_est, 
