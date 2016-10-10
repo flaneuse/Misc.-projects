@@ -446,8 +446,7 @@ ggplot() +
   ggtitle('Though poverty prevalence has significantly declined, the ZOI still lags relative to the rest of Zambia',
           subtitle = 'percent of people living on less than $1.25/day (2005 PPP)')
 
-# Diet and hunger ---------------------------------------------------------
-
+# hunger ---------------------------------------------------------
 
 hunger = tidy %>% 
   filter(indicator %like% 'hunger',
@@ -482,3 +481,32 @@ save_plot('~/Creative Cloud Files/MAV/Projects/ZMB_FTFmidline_2016-10/ZMB_hungry
           width = 7, height = 2.5)
 
 
+# women’s dietary diversity -----------------------------------------------
+
+dd = tidy %>% 
+  filter(indicator %like% 'Diet')
+
+ggplot(dd, aes(x = year, y = est)) +
+  geom_area(aes(y = 9), fill = grey20K) +
+  geom_area(stat = 'identity', fill = brewer.pal(11, 'Spectral')[10], 
+            alpha = 0.75) +
+  geom_point(fill = brewer.pal(11, 'Spectral')[10],
+             size = 8,
+             stroke = stroke_dot,
+             colour = grey90K,
+             shape = 21,
+             alpha = 1) +
+  geom_text(aes(x = year, y = est,
+                label = round(est, 1)),
+            size = 4, family = 'Lato',
+            colour = 'white') +
+  scale_x_continuous(breaks = c(2012, 2015), position = 'top'
+                    ) +
+  scale_y_continuous(breaks = c(0, 3, 6, 9),
+                     labels = c(0, 3, 6, '9 food groups')) +
+  ggtitle('mean food groups consumed by women of reproductive age') +
+  theme_ygrid() +
+  theme(panel.ontop = TRUE,
+        axis.title.y = element_blank())
+
+save_plot('~/Creative Cloud Files/MAV/Projects/ZMB_FTFmidline_2016-10/ZMB_womenDD.pdf', width = 5, height = 7)
