@@ -230,3 +230,89 @@ ggplot(comb, aes(y = forcats::fct_reorder(province, chg_LCMS))) +
 
 save_plot('~/Creative Cloud Files/MAV/Projects/ZMB_FTFmidline_2016-10/ZMB_povertyChg.pdf', width = 8, height = 7)
 
+
+# RALS slope plot ---------------------------------------------------------
+eastern_rals  = rals %>% 
+  filter(province == 'Eastern') %>% 
+  gather(year, est, -province, -chg_RALS) %>% 
+  mutate(year = as.numeric(str_replace(year, 'pov', '')),
+         est = est/100)
+
+ggplot(eastern_rals, aes(x = year, y = est, fill = chg_RALS)) +
+  geom_area(aes(y = 1), fill = grey20K) +
+  geom_area(stat = 'identity', 
+            alpha = 1) +
+  geom_hline(yintercept = eastern_rals[1, 'est'],
+             size = 0.325,
+             colour = grey75K) +
+  geom_point(size = 5,
+             fill = NA,
+             stroke = stroke_dot,
+             colour = grey90K,
+             shape = 24,
+             alpha = 1, 
+             data = eastern_lcms) +
+  geom_point(size = 10,
+             stroke = stroke_dot,
+             colour = grey90K,
+             shape = 21,
+             alpha = 1) +
+  geom_text(aes(x = year, y = est,
+                label = percent(est, 0)),
+            size = 3.25, family = 'Lato',
+            colour = grey75K) +
+  scale_x_continuous(limits = c(2010, 2015),
+    breaks = c(2012, 2015), position = 'top'
+  ) +
+  scale_y_continuous(labels = scales::percent) +
+  scale_fill_gradientn(colours = rev(brewer.pal(11, 'RdYlBu')),
+                       limits = c(-0.2, 0.2)) +
+  ggtitle('percent of households living in poverty') +
+  theme_ygrid() +
+  theme(panel.ontop = TRUE,
+        axis.title.y = element_blank())
+
+save_plot('~/Creative Cloud Files/MAV/Projects/ZMB_FTFmidline_2016-10/ZMB_povertyChg_RALS.pdf', width = 3.5, height = 7)
+
+# LCMS slope plot ---------------------------------------------------------
+eastern_lcms  = lcms %>% 
+  filter(province == 'Eastern') %>% 
+  gather(year, est, -province, -chg_LCMS) %>% 
+  mutate(year = as.numeric(str_replace(year, 'pov', '')),
+         est = est/100)
+
+ggplot(eastern_lcms, aes(x = year, y = est, fill = chg_LCMS)) +
+  geom_area(aes(y = 1), fill = grey20K) +
+  geom_area(stat = 'identity', 
+            alpha = 1) +
+  geom_hline(yintercept = eastern_lcms[1, 'est'],
+             size = 0.325,
+             colour = grey75K) +
+  geom_point(size = 5,
+             fill = NA,
+             stroke = stroke_dot,
+             colour = grey90K,
+             shape = 21,
+             alpha = 1, 
+             data = eastern_rals) +
+    geom_point(size = 10,
+             stroke = stroke_dot,
+             colour = grey90K,
+             shape = 24,
+             alpha = 1) +
+  geom_text(aes(x = year, y = est,
+                label = percent(est, 0)),
+            size = 3.25, family = 'Lato',
+            colour = grey75K) +
+  scale_x_continuous(limits = c(2010, 2015),
+                     breaks = c(2010, 2015), position = 'top'
+  ) +
+  scale_y_continuous(labels = scales::percent) +
+  scale_fill_gradientn(colours = rev(brewer.pal(11, 'RdYlBu')),
+                       limits = c(-0.2, 0.2)) +
+  ggtitle('percent of households living in poverty') +
+  theme_ygrid() +
+  theme(panel.ontop = TRUE,
+        axis.title.y = element_blank())
+
+save_plot('~/Creative Cloud Files/MAV/Projects/ZMB_FTFmidline_2016-10/ZMB_povertyChg_LCMS.pdf', width = 3.5, height = 7)
