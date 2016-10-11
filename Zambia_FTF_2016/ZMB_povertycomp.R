@@ -174,8 +174,59 @@ wb = data.frame(province = c(
 
 comb = full_join(rals, lcms, by = 'province')
 
+
+# x-y scatter -------------------------------------------------------------
+
+
 ggplot(data = comb, aes(x = chg_RALS, y = chg_LCMS)) +
   geom_abline(colour = 'red', slope = 1, intercept = 0) + 
-  geom_point(size = 5, alpha = 0.3) +
-  geom_point(size = 5, alpha = 0.3, colour = 'dodgerblue', data = comb %>% filter(province == 'Eastern')) +
-  coord_equal(ratio = 1, ylim = c(-0.2, 0.2),  xlim = c(-0.2, 0.2))
+  geom_vline(colour = 'black', xintercept = 0) +
+  annotate(geom = 'rect', xmin = -0.2, xmax = 0, ymin = -0.2, ymax = 0, 
+            fill = 'red',
+            alpha = 0.05) +
+  # annotate(geom = 'rect', xmin = -0.2, xmax = 0, ymin = 0.2, ymax = 0, 
+            # fill = 'yellow',
+            # alpha = 0.2) +
+  # annotate(geom = 'rect', xmin = 0.2, xmax = 0, ymin = -0.2, ymax = 0, 
+            # fill = 'yellow',
+            # alpha = 0.2) +
+  annotate(geom = 'rect', xmin = 0.2, xmax = 0, ymin = 0.2, ymax = 0, 
+            fill = 'blue',
+            alpha = 0.05) +
+  geom_point(aes(fill = chg_RALS), 
+             stroke = 0.125,
+             shape = 21,
+             colour = grey90K,
+             size = 5, alpha = 0.3) +
+  coord_equal(ratio = 1, ylim = c(-0.2, 0.2),  xlim = c(-0.2, 0.2)) +
+  scale_fill_gradientn(colours = brewer.pal(11, 'RdYlBu')) +
+  theme_xygridlight()
+
+
+
+# difference dot plot -----------------------------------------------------
+
+ggplot(comb, aes(y = forcats::fct_reorder(province, chg_LCMS))) +
+  geom_segment(aes(x = chg_RALS, xend = chg_LCMS, yend = forcats::fct_reorder(province, chg_LCMS)),
+             size = 0.35,
+             colour = grey70K) +
+    geom_point(aes(x = chg_RALS, fill = chg_RALS),
+             size = 5,
+             shape = 21,
+             colour = grey90K, 
+             stroke = 0.125) +
+  geom_point(aes(x = chg_LCMS, fill = chg_LCMS),
+             size = 5,
+             shape = 24,
+             colour = grey90K, 
+             stroke = 0.125) +
+  scale_fill_gradientn(colours = rev(brewer.pal(11, 'RdYlBu')),
+                       limits = c(-0.2, 0.2)) +
+  scale_x_reverse(labels = scales::percent, limits = c(0.2, -0.2)) +
+  theme_xgrid() +
+  theme(legend.position = c(0.7, 0.7),
+        legend.direction = 'horizontal')
+
+
+save_plot('~/Creative Cloud Files/MAV/Projects/ZMB_FTFmidline_2016-10/ZMB_povertyChg.pdf', width = 8, height = 7)
+
