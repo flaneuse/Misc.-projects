@@ -5,3 +5,6 @@
 - [ ] Create packed circles visualization of the overlap in classification
 
 ## Done
+
+## Cleanup in Adoble Illustrator
+* 
