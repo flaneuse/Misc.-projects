@@ -18,6 +18,7 @@ library(readxl)
 library(ggplot2)
 library(packcircles)
 library(dplyr)
+library(bubbles)
 
 limits = c(-100, 100)
 
@@ -94,5 +95,5 @@ ggplot(y, aes(x = x, y = y,
 x = df %>% filter(no_lists == 0) %>% 
   arrange(desc(region))
 
-bubbles(value = x$pop/1e7, label = x$country, color = x$fill_color)
+bubbles(value = x$pop/1e7, label = paste0(x$country), color = x$fill_color)
 
