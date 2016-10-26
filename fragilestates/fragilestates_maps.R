@@ -20,7 +20,12 @@
 
 
 # libraries to load -------------------------------------------------------
-pkgs = c('llamar', 'dplyr', 'tidyr', 'frontier', 'RColorBrewer', 'extrafont', 'readxl')
+library(devtools)
+install_github('flaneuse/frontier')
+
+pkgs = c('llamar', 'dplyr', 'tidyr', 
+         'frontier', 'maptools',
+         'RColorBrewer', 'extrafont', 'readxl')
 
 # Install and load packages -----------------------------------------------
 
@@ -58,8 +63,6 @@ df2015 = df %>%
 # import geo data ---------------------------------------------------------
 
 # import spatial data
-library(frontier)
-library(maptools)
 
 geo = frontier::shp2df(baseDir = '~/Documents/USAID/geodata/ne_10m_admin_0_countries/',
                  layerName = 'ne_10m_admin_0_countries', getCentroids = FALSE)
@@ -130,4 +133,31 @@ p = frontier::plot_map(df_geo, fill_var = 'factor(any_last5)') +
   scale_fill_manual(values = c('0' = grey15K, '1' = brewer.pal(11, 'Spectral')[2]))
 
 save_plot('~/Documents/USAID/mini projects/Fragile States - (Aaron Roesch)/any_events_5y.pdf',
+          width = 7, height = 4)
+
+
+p = frontier::plot_map(df_geo, fill_var = 'confdeaths') +
+  scale_fill_gradientn(colours = brewer.pal(9, 'BuPu'),
+                       na.value = grey15K)
+
+save_plot('~/Documents/USAID/mini projects/Fragile States - (Aaron Roesch)/confdeaths.pdf',
+          width = 7, height = 4)
+
+range(df$vedeaths, na.rm =  TRUE)
+
+p = frontier::plot_map(df_geo, fill_var = 'vedeaths') +
+  scale_fill_gradientn(colours = brewer.pal(9, 'BuPu'),
+                       breaks = 
+                       na.value = grey15K)
+
+
+save_plot('~/Documents/USAID/mini projects/Fragile States - (Aaron Roesch)/vedeaths.pdf',
+          width = 7, height = 4)
+
+p = frontier::plot_map(df_geo, fill_var = 'coups') +
+  scale_fill_gradientn(colours = brewer.pal(9, 'BuPu'),
+                       na.value = grey15K)
+
+
+save_plot('~/Documents/USAID/mini projects/Fragile States - (Aaron Roesch)/coups.pdf',
           width = 7, height = 4)
