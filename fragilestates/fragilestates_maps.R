@@ -67,6 +67,11 @@ df2015 = df %>%
 geo = frontier::shp2df(baseDir = '~/Documents/USAID/geodata/ne_10m_admin_0_countries/',
                  layerName = 'ne_10m_admin_0_countries', getCentroids = FALSE)
 
+# land mass basemap
+land = frontier::shp2df(baseDir = '~/Documents/USAID/geodata/ne_10m_land/',
+                       layerName = 'ne_10m_land', getCentroids = FALSE) %>% 
+  filter(NAME != 'Antarctica')
+
 # find which code contains the correct iso code. options:
 # ADM0_A3_US
 # ADM0_A3_IS
@@ -161,3 +166,29 @@ p = frontier::plot_map(df_geo, fill_var = 'coups') +
 
 save_plot('~/Documents/USAID/mini projects/Fragile States - (Aaron Roesch)/coups.pdf',
           width = 7, height = 4)
+
+p = frontier::plot_map(df_geo, fill_var = 'rgmchngmag') +
+  scale_fill_gradientn(colours = brewer.pal(9, 'BuPu'),
+                       na.value = grey15K)
+
+
+save_plot('~/Documents/USAID/mini projects/Fragile States - (Aaron Roesch)/rgmchngmag.pdf',
+          width = 7, height = 4)
+
+p = frontier::plot_map(df_geo, fill_var = 'massatrocmag') +
+  scale_fill_gradientn(colours = brewer.pal(9, 'BuPu'),
+                       na.value = grey15K)
+
+
+save_plot('~/Documents/USAID/mini projects/Fragile States - (Aaron Roesch)/massatrocmag.pdf',
+          width = 7, height = 4)
+
+
+ggplot(geo, aes_string(x = 'long', y = 'lat',
+                      group = 'group', order = 'order')) +
+  geom_polygon(data = land, fill = grey10K) +
+  geom_path(size = 0.4,
+            colour = 'red') +
+  coord_equal() +
+  theme_void() +
+  theme(legend.position = 'none')
