@@ -64,13 +64,12 @@ df2015 = df %>%
 
 # import spatial data
 
-geo = frontier::shp2df(baseDir = '~/Documents/USAID/geodata/ne_10m_admin_0_countries/',
+geo = frontier::shp2df(baseDir = '~/Documents/USAID/geodata/ne_10m_admin_0_countries_10pctsimpl/',
                  layerName = 'ne_10m_admin_0_countries', getCentroids = FALSE)
 
 # land mass basemap
-land = frontier::shp2df(baseDir = '~/Documents/USAID/geodata/ne_10m_land/',
-                       layerName = 'ne_10m_land', getCentroids = FALSE) %>% 
-  filter(NAME != 'Antarctica')
+land = frontier::shp2df(baseDir = '~/Documents/USAID/geodata/ne_10m_land_10pctsimpl/',
+                       layerName = 'ne_10m_land', getCentroids = FALSE) 
 
 # find which code contains the correct iso code. options:
 # ADM0_A3_US
@@ -126,7 +125,14 @@ df_geo = full_join(df2015, geo, by = c("code"))
 
 max_val = max(abs(range(df2015$al, na.rm = TRUE)))
 
-p = frontier::plot_map(df_geo, fill_var = 'al') +
+p = ggplot(df_geo %>% filter(CONTINENT == 'Africa'), aes_string(x = 'long', y = 'lat',
+                           group = 'group', order = 'order')) +
+  geom_path(data = land, colour = '#89a3d1', size = 2) +
+  geom_polygon(aes(fill = al)) +
+  geom_path(colour = 'white', size = 0.15) +
+  coord_equal() +
+  theme_void() +
+  theme(legend.position = 'none') +
   scale_fill_gradientn(colours = rev(brewer.pal(10, 'RdYlBu')), 
                        limits = c(-max_val, max_val),
                        na.value = grey15K)
@@ -186,9 +192,7 @@ save_plot('~/Documents/USAID/mini projects/Fragile States - (Aaron Roesch)/massa
 
 ggplot(geo, aes_string(x = 'long', y = 'lat',
                       group = 'group', order = 'order')) +
-  geom_polygon(data = land, fill = grey10K) +
-  geom_path(size = 0.4,
-            colour = 'red') +
+
   coord_equal() +
   theme_void() +
   theme(legend.position = 'none')
