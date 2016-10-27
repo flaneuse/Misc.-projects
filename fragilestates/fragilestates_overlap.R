@@ -21,7 +21,7 @@ library(dplyr)
 library(bubbles)
 library(llamar)
 
-limits = c(-100, 100)
+limits = c(-1000, 1000)
 
 color_afr = '#fff2ae'
 color_asia = '#b3e2cd'
@@ -43,7 +43,7 @@ x = df %>% filter(no_lists == 0) %>%
 
 bubbles(value = x$pop/1e7, label = paste0(x$country), color = x$fill_color)
 
-
+rm(x)
 
 # calculate starting coordinates ------------------------------------------
 
@@ -61,14 +61,42 @@ df = df %>%
          r2 = lead(pop/1e6)) %>% 
   mutate(x = cumsum(r + r2))
 
+df = df %>% filter(no_lists==1)
+avg_r = mean(df$r)
 
+init_coords = 
+  df %>% 
+  arrange(desc(region), desc(pop)) %>% 
+  mutate(grp_num = dense_rank(region),
+         id = row_number(region)) %>% 
+  group_by(region) %>% 
+  mutate(
+    grp_rank = row_number(region),
+    num_across = ceiling(sqrt(max(grp_rank))),
+    x = (grp_rank + num_across - 1) %% num_across,
+    y = ceiling(grp_rank / num_across))
+  # x = rep(seq(from = 0, by = avg_r, length.out = 5), times = 5),
+  # y = rep(seq(from = 0, by = avg_r, length.out = 5), each = 5)) %>% 
+  # bind_cols(df, data.frame(y = 1:nrow(df))) %>%
+  
+# how much to offset each group, to clump them together
+grp_offset = init_coords %>% 
+  ungroup() %>% 
+  select(region, num_across, grp_num) %>% 
+  distinct() %>% 
+  arrange(grp_num) %>% 
+  mutate(prev_circles = cumsum(lag(num_across, default = 0)))
 
-y = bind_cols(df, data.frame(y = 1:nrow(df))) %>% 
+init_coords = full_join(init_coords, grp_offset)
+  
+init_coords = init_coords %>% 
+  mutate(x = (x + prev_circles)  * avg_r,
+         y = y * avg_r) %>%
   ungroup() %>% 
   select(x, y, r)
 
-opt_layout = circleLayout(y , xlim = limits, ylim = limits,
-                 weights = 1, wrap = TRUE)
+opt_layout = circleLayout(init_coords , xlim = limits, ylim = limits,
+                          weights = 1, wrap = TRUE)
 
 circle_centroids = bind_cols(opt_layout$layout, data.frame(id = 1:nrow(df)))
 
@@ -99,7 +127,7 @@ ggplot(circle_coords, aes(x = x, y = y, group = id,
   geom_path(size = 0.25) +
   geom_text(aes(label = country),
             family = 'Lato Light',
-            size = 2,
+            size = 4,
             colour = grey75K,
             data = circle_centroids) + 
   coord_equal() +
