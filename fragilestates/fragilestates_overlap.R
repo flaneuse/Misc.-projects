@@ -19,6 +19,7 @@ library(ggplot2)
 library(packcircles)
 library(dplyr)
 library(bubbles)
+library(llamar)
 
 limits = c(-100, 100)
 
@@ -32,68 +33,81 @@ color_else = '#cccccc'
 # Import data -------------------------------------------------------------
 df = read_excel(paste0(base_dir, 'SBU_fragility_lists.xlsx')) 
 
+
+# d3-based visualiztion ---------------------------------------------------
+# Uses package 'bubbles' and d3-based packing optimization.
+# optimization is great, but fewer params to control, esp. size scaling (on same axes?)
+# also more annoying to export to vector-graphic.
+x = df %>% filter(no_lists == 0) %>% 
+  arrange(desc(region))
+
+bubbles(value = x$pop/1e7, label = paste0(x$country), color = x$fill_color)
+
+
+
+# calculate starting coordinates ------------------------------------------
+
 df = df %>% 
   mutate(fill_color = case_when(df$region == 'AFR' ~ color_afr,
                                 df$region == 'ASIA' ~ color_asia,
                                 df$region == 'LAC' ~ color_lac,
                                 df$region == 'ME' ~ color_me,
                                 df$region == 'E&E' ~ color_ee,
-                                TRUE ~ color_else))
-
-x = df %>% filter(no_lists == 0) %>% 
+                                TRUE ~ color_else)) %>% 
+  group_by(no_lists) %>% 
   arrange(desc(region), desc(pop)) %>% 
   mutate(r = pop/1e6,
-         area = pi * r^2)
+         area = pi * r^2,
+         r2 = lead(pop/1e6)) %>% 
+  mutate(x = cumsum(r + r2))
 
 
-total_area = sum(x$area) * 1.25
-array_length = ceiling(sqrt(nrow(x)))
 
-limits = c(-sqrt(total_area)/2, sqrt(total_area)/2)
-
-coord_loc = seq(by = sqrt(total_area)/array_length, from = limits[1]/1.25, length.out = array_length)
-
-y = x %>%
-  mutate(x = rep(coord_loc, array_length)[1:157],
-         y = rep(coord_loc, each = array_length)[1:157]) %>% 
+y = bind_cols(df, data.frame(y = 1:nrow(df))) %>% 
+  ungroup() %>% 
   select(x, y, r)
 
-z = circleLayout(y , xlim = limits, ylim = limits,
+opt_layout = circleLayout(y , xlim = limits, ylim = limits,
                  weights = 1, wrap = TRUE)
 
-
+circle_centroids = bind_cols(opt_layout$layout, data.frame(id = 1:nrow(df)))
 
 
 # Convert centers, radii into cartesian coordinates -----------------------
 # Though ggplot has a mechanism for mapping a variable to the size of geom_point,
 # the size is in units of mm, NOT the cartesian axis.  As a result, you have to convert
 # the center and radii into coordinates that can be used with geom_polygon.
-circle_coords = circlePlotData(z$layout, npoints = 50)
+circle_coords = circlePlotData(circle_centroids, npoints = 50)
 # circle_coords = circlePlotData(y, npoints = 50)
 
-circle_coords = bind_cols(z$layout, x)
+full_data = bind_cols(df, data.frame(id = 1:nrow(df))) %>% 
+  select(id, country, region, coverage, pop, budget, fill_color, r, no_lists)
 
-# ggplot(circle_coords, aes(x = x, y = y, group = id,
-  #                    fill = id)) +
-  # geom_polygon() +
-  # # coord_equal(xlim = limits, ylim = limits) +
-  # # scale_fill_gradientn(colours = RColorBrewer::brewer.pal(9, 'YlGnBu')) +
-  # scale_size_identity()
+# Bind original data
+circle_coords = full_join(circle_coords, full_data, by = c("id"))
+
+circle_centroids = full_join(circle_centroids, full_data, by = c("id", "r"))
 
 
-ggplot(y, aes(x = x, y = y, 
-                          size = r,
-                          fill = fill_color,
-                          alpha = coverage)) +
-  # geom_polygon(alpha = 0.4) +
-  geom_point(shape = 21) +
+# plot --------------------------------------------------------------------
+
+
+ggplot(circle_coords, aes(x = x, y = y, group = id,
+                          colour = fill_color,
+                          fill = fill_color)) +
+  geom_polygon(aes(alpha = factor(coverage))) +
+  geom_path(size = 0.25) +
+  geom_text(aes(label = country),
+            family = 'Lato Light',
+            size = 2,
+            colour = grey75K,
+            data = circle_centroids) + 
+  coord_equal() +
+  scale_colour_identity() +
   scale_fill_identity() +
-  coord_equal(xlim = limits, ylim = limits) +
-  scale_alpha_discrete(range = c(0.2, 0.5)) +
-  scale_size_identity()
+  scale_alpha_discrete(range = c(0.2, 0.8)) +
+  facet_wrap(~no_lists, ncol = 1) +
+  theme_blank()
 
-x = df %>% filter(no_lists == 0) %>% 
-  arrange(desc(region))
 
-bubbles(value = x$pop/1e7, label = paste0(x$country), color = x$fill_color)
 
