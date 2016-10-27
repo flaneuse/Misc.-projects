@@ -21,7 +21,8 @@ library(dplyr)
 library(bubbles)
 library(llamar)
 
-limits = c(-350, 300)
+# limits = c(-350, 300)
+limits = c(-75, 75)
 
 color_afr = '#fff2ae'
 color_asia = '#b3e2cd'
@@ -56,7 +57,8 @@ df = df %>%
                                 TRUE ~ color_else)) %>% 
   group_by(no_lists) %>% 
   arrange(desc(region), desc(pop)) %>% 
-  mutate(r = pop/1e7,
+  # mutate(r = pop/ 1e7,
+  mutate(r = log10(pop),
          area = pi * r^2,
          r2 = lead(pop/1e6)) %>% 
   mutate(x = cumsum(r + r2))
@@ -139,7 +141,8 @@ calc_packing = function(df,
     scale_fill_identity() +
     scale_alpha_manual(values = c('0' = 0.2, 'Coverage' = 0.75)) +
     # facet_wrap(~no_lists, ncol = 1) +
-    theme_blank()
+    # theme_blank()
+    theme_bw()
   
   save_plot(filename, width = width_plot, height = height_plot)
   
