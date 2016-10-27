@@ -19,6 +19,9 @@
 # * mass atrocity
 
 
+# setup params ------------------------------------------------------------
+bg_fill = '#f6f8fb'
+
 # libraries to load -------------------------------------------------------
 library(devtools)
 install_github('flaneuse/frontier')
@@ -127,15 +130,19 @@ max_val = max(abs(range(df2015$al, na.rm = TRUE)))
 
 p = ggplot(df_geo %>% filter(CONTINENT == 'Africa'), aes_string(x = 'long', y = 'lat',
                            group = 'group', order = 'order')) +
+  geom_path(data = land, fill = grey15K) +
   geom_path(data = land, colour = '#89a3d1', size = 2) +
   geom_polygon(aes(fill = al)) +
   geom_path(colour = 'white', size = 0.15) +
   coord_equal() +
-  theme_void() +
-  theme(legend.position = 'none') +
+
   scale_fill_gradientn(colours = rev(brewer.pal(10, 'RdYlBu')), 
                        limits = c(-max_val, max_val),
-                       na.value = grey15K)
+                       na.value = grey15K) +
+  theme_void() +
+  theme(legend.position = 'none',
+        rect = element_rect(fill = '#ffffff', colour = '#ffffff', size = 0, linetype = 1),
+              panel.background = element_rect(fill = bg_fill))
 
 save_plot('~/Documents/USAID/mini projects/Fragile States - (Aaron Roesch)/al_score.pdf',
           width = 7, height = 4)
