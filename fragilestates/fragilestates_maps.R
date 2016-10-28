@@ -203,3 +203,13 @@ ggplot(geo, aes_string(x = 'long', y = 'lat',
   coord_equal() +
   theme_void() +
   theme(legend.position = 'none')
+
+
+
+p = frontier::plot_map(df_geo, fill_var = 'region') +
+  scale_fill_brewer(palette =  'Pastel1',
+                       na.value = grey15K)
+
+
+save_plot('~/Documents/USAID/mini projects/Fragile States - (Aaron Roesch)/map_region.pdf',
+          width = 7, height = 4)
