@@ -33,14 +33,14 @@ color_na = '#DECBE4' #decbe4'
 color_else = '#cccccc'
 
 # Import data -------------------------------------------------------------
-df = read_excel(paste0(base_dir, 'SBU_fragility_lists.xlsx')) 
+frag_overlap = read_excel(paste0(base_dir, 'SBU_fragility_lists.xlsx')) 
 
 
 # d3-based visualiztion ---------------------------------------------------
 # Uses package 'bubbles' and d3-based packing optimization.
 # optimization is great, but fewer params to control, esp. size scaling (on same axes?)
 # also more annoying to export to vector-graphic.
-x = df %>% filter(no_lists == 0) %>% 
+x = frag_overlap %>% filter(no_lists == 0) %>% 
   arrange(desc(region))
 
 bubbles(value = x$pop/1e7, label = paste0(x$country), color = x$fill_color)
@@ -49,13 +49,13 @@ rm(x)
 
 # calculate starting coordinates ------------------------------------------
 
-df = df %>% 
-  mutate(fill_color = case_when(df$region == 'AFR' ~ color_afr,
-                                df$region == 'ASIA' ~ color_asia,
-                                df$region == 'LAC' ~ color_lac,
-                                df$region == 'ME' ~ color_me,
-                                df$region == 'E&E' ~ color_ee,
-                                df$region == 'NA' ~ color_na,
+frag_overlap = frag_overlap %>% 
+  mutate(fill_color = case_when(frag_overlap$region == 'AFR' ~ color_afr,
+                                frag_overlap$region == 'ASIA' ~ color_asia,
+                                frag_overlap$region == 'LAC' ~ color_lac,
+                                frag_overlap$region == 'ME' ~ color_me,
+                                frag_overlap$region == 'E&E' ~ color_ee,
+                                frag_overlap$region == 'NA' ~ color_na,
                                 TRUE ~ color_else)) %>% 
   group_by(no_lists) %>% 
   arrange(desc(region), desc(pop)) %>% 
@@ -68,15 +68,15 @@ df = df %>%
 
 
 
-calc_packing = function(df,
+calc_packing = function(frag_overlap,
                         filename, 
                         height_plot = 10,
                         width_plot = 10){
   # Find the average radius for each group
-  avg_r = mean(df$r)
+  avg_r = mean(frag_overlap$r)
   
   init_coords = 
-    df %>% 
+    frag_overlap %>% 
     arrange(desc(region), coverage) %>% 
     mutate(grp_num = dense_rank(region),
            id = row_number(region)) %>% 
@@ -88,7 +88,7 @@ calc_packing = function(df,
       y = ceiling(grp_rank / num_across))
   # x = rep(seq(from = 0, by = avg_r, length.out = 5), times = 5),
   # y = rep(seq(from = 0, by = avg_r, length.out = 5), each = 5)) %>% 
-  # bind_cols(df, data.frame(y = 1:nrow(df))) %>%
+  # bind_cols(frag_overlap, data.frame(y = 1:nrow(frag_overlap))) %>%
   
   # how much to offset each group, to clump them together
   grp_offset = init_coords %>% 
@@ -109,7 +109,7 @@ calc_packing = function(df,
   opt_layout = circleLayout(init_coords , xlim = limits, ylim = limits,
                             weights = 1, wrap = TRUE)
   
-  circle_centroids = bind_cols(opt_layout$layout, data.frame(id = 1:nrow(df)))
+  circle_centroids = bind_cols(opt_layout$layout, data.frame(id = 1:nrow(frag_overlap)))
   
   
   # Convert centers, radii into cartesian coordinates -----------------------
@@ -118,7 +118,7 @@ calc_packing = function(df,
   # the center and radii into coordinates that can be used with geom_polygon.
   circle_coords = circlePlotData(circle_centroids, npoints = 100)
   
-  full_data = bind_cols(df  %>% arrange(desc(region), coverage), data.frame(id = 1:nrow(df))) %>% 
+  full_data = bind_cols(frag_overlap  %>% arrange(desc(region), coverage), data.frame(id = 1:nrow(frag_overlap))) %>% 
     select(id, country, region, coverage, pop, budget, fill_color, r, no_lists)
   
   # Bind original data
@@ -154,22 +154,22 @@ calc_packing = function(df,
 }
 
 # plot --------------------------------------------------------------------
-df_plot = df %>% filter(no_lists == 1)
-calc_packing(df_plot, '~/Documents/USAID/mini projects/Fragile States - (Aaron Roesch)/fragile_circles1.pdf')
+frag_overlap_plot = frag_overlap %>% filter(no_lists == 1)
+calc_packing(frag_overlap_plot, '~/Documents/USAID/mini projects/Fragile States - (Aaron Roesch)/fragile_circles1.pdf')
 
-df_plot = df %>% filter(no_lists == 2)
-calc_packing(df_plot, '~/Documents/USAID/mini projects/Fragile States - (Aaron Roesch)/fragile_circles2.pdf')
+frag_overlap_plot = frag_overlap %>% filter(no_lists == 2)
+calc_packing(frag_overlap_plot, '~/Documents/USAID/mini projects/Fragile States - (Aaron Roesch)/fragile_circles2.pdf')
 
-df_plot = df %>% filter(no_lists == 3)
-calc_packing(df_plot, '~/Documents/USAID/mini projects/Fragile States - (Aaron Roesch)/fragile_circles3.pdf')
+frag_overlap_plot = frag_overlap %>% filter(no_lists == 3)
+calc_packing(frag_overlap_plot, '~/Documents/USAID/mini projects/Fragile States - (Aaron Roesch)/fragile_circles3.pdf')
 
-regions = unique(df$region)
+regions = unique(frag_overlap$region)
 
 for(i in seq_along(regions)){
   
-  df_plot = df %>% filter(no_lists == 0, region == regions[i])
+  frag_overlap_plot = frag_overlap %>% filter(no_lists == 0, region == regions[i])
   
-  p=calc_packing(df_plot, paste0('~/Documents/USAID/mini projects/Fragile States - (Aaron Roesch)/fragile_circles0_',
+  p=calc_packing(frag_overlap_plot, paste0('~/Documents/USAID/mini projects/Fragile States - (Aaron Roesch)/fragile_circles0_',
                                  regions[i], '.pdf'))
 }
 
