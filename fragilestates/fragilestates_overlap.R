@@ -21,7 +21,9 @@ library(dplyr)
 library(bubbles)
 library(llamar)
 
-limits = c(-300, 300)
+# limits = c(-300, 300)
+limits = c(-50, 100)
+
 # limits = c(-75, 75)
 
 color_afr = '#FBB4AE' #'#fff2ae'
@@ -57,14 +59,15 @@ frag_overlap = frag_overlap %>%
                                 frag_overlap$region == 'E&E' ~ color_ee,
                                 frag_overlap$region == 'NA' ~ color_na,
                                 TRUE ~ color_else)) %>% 
+  filter(!country %in% c('China', 'India')) %>% 
   group_by(no_lists) %>% 
   arrange(desc(region), desc(pop)) %>% 
   mutate(r = pop / 1e7)
-  # mutate(r = log10(budget),
-  # mutate(r = log10(pop),
-         # area = pi * r^2,
-         # r2 = lead(pop/1e6)) %>% 
-  # mutate(x = cumsum(r + r2))
+# mutate(r = log10(budget),
+# mutate(r = log10(pop),
+# area = pi * r^2,
+# r2 = lead(pop/1e6)) %>% 
+# mutate(x = cumsum(r + r2))
 
 
 
@@ -122,9 +125,10 @@ calc_packing = function(frag_overlap,
     select(id, country, region, coverage, pop, budget, fill_color, r, no_lists)
   
   # Bind original data
-  circle_coords = full_join(circle_coords, full_data, by = c("id"))
+  circle_coords = full_join(circle_coords, full_data, by = c("id")) 
   
-  circle_centroids = full_join(circle_centroids, full_data, by = c("id", "r"))
+  circle_centroids = full_join(circle_centroids, full_data, 
+                               by = c("id", "r"))
   
   p = ggplot(circle_coords, aes(x = x, y = y, group = id,
                                 colour = fill_color,
@@ -139,14 +143,14 @@ calc_packing = function(frag_overlap,
               data = circle_centroids %>% 
                 # filter(coverage == 'Coverage' |
                 filter(  
-                         pop > 100e6)) + 
+                  pop > 70e6 | pop > 20e6 & coverage == 'Coverage')) + 
     coord_equal(xlim = limits, ylim = limits) +
     scale_colour_identity() +
     scale_fill_identity() +
     scale_alpha_manual(values = c('0' = 0.2, 'Coverage' = 0.75)) +
     # facet_wrap(~no_lists, ncol = 1) +
     theme_blank()
-    # theme_bw()
+  # theme_bw()
   
   save_plot(filename, width = width_plot, height = height_plot)
   
@@ -170,7 +174,7 @@ for(i in seq_along(regions)){
   frag_overlap_plot = frag_overlap %>% filter(no_lists == 0, region == regions[i])
   
   p=calc_packing(frag_overlap_plot, paste0('~/Documents/USAID/mini projects/Fragile States - (Aaron Roesch)/fragile_circles0_',
-                                 regions[i], '.pdf'))
+                                           regions[i], '.pdf'))
 }
 
 
