@@ -21,14 +21,15 @@ library(dplyr)
 library(bubbles)
 library(llamar)
 
-# limits = c(-350, 300)
-limits = c(-75, 75)
+limits = c(-300, 300)
+# limits = c(-75, 75)
 
-color_afr = '#fff2ae'
-color_asia = '#b3e2cd'
-color_lac = '#fdcdac'
-color_me = '#f1e2cc'
-color_ee = '#cbd5e8'
+color_afr = '#FBB4AE' #'#fff2ae'
+color_asia = '#B3CDE3' #b3e2cd'
+color_lac = '#FFFFCC' #fdcdac'
+color_me = '#FED9A6'#f1e2cc'
+color_ee = '#CCEBC5'#cbd5e8'
+color_na = '#DECBE4' #decbe4'
 color_else = '#cccccc'
 
 # Import data -------------------------------------------------------------
@@ -54,14 +55,16 @@ df = df %>%
                                 df$region == 'LAC' ~ color_lac,
                                 df$region == 'ME' ~ color_me,
                                 df$region == 'E&E' ~ color_ee,
+                                df$region == 'NA' ~ color_na,
                                 TRUE ~ color_else)) %>% 
   group_by(no_lists) %>% 
   arrange(desc(region), desc(pop)) %>% 
-  # mutate(r = pop/ 1e7,
-  mutate(r = log10(pop),
-         area = pi * r^2,
-         r2 = lead(pop/1e6)) %>% 
-  mutate(x = cumsum(r + r2))
+  mutate(r = pop / 1e7)
+  # mutate(r = log10(budget),
+  # mutate(r = log10(pop),
+         # area = pi * r^2,
+         # r2 = lead(pop/1e6)) %>% 
+  # mutate(x = cumsum(r + r2))
 
 
 
@@ -134,15 +137,16 @@ calc_packing = function(df,
               size = 3,
               colour = grey75K,
               data = circle_centroids %>% 
-                filter(coverage == 'Coverage' |
+                # filter(coverage == 'Coverage' |
+                filter(  
                          pop > 100e6)) + 
     coord_equal(xlim = limits, ylim = limits) +
     scale_colour_identity() +
     scale_fill_identity() +
     scale_alpha_manual(values = c('0' = 0.2, 'Coverage' = 0.75)) +
     # facet_wrap(~no_lists, ncol = 1) +
-    # theme_blank()
-    theme_bw()
+    theme_blank()
+    # theme_bw()
   
   save_plot(filename, width = width_plot, height = height_plot)
   
@@ -168,5 +172,6 @@ for(i in seq_along(regions)){
   p=calc_packing(df_plot, paste0('~/Documents/USAID/mini projects/Fragile States - (Aaron Roesch)/fragile_circles0_',
                                  regions[i], '.pdf'))
 }
+
 
 
