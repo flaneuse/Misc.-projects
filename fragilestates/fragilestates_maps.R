@@ -50,28 +50,29 @@ for (i in seq_along(pkgs)) {
   library(pkgs[i], character.only = TRUE, quietly = TRUE)
 }
 
-loadfonts(quiet = TRUE)
+loafrag_breakdownonts(quiet = TRUE)
 
 
 
 # import data -------------------------------------------------------------
 
 # fragile scores and threats
-df = read_excel('~/Documents/USAID/mini projects/Fragile States - (Aaron Roesch)/SBU_fragility_threats.xlsx')
+frag_breakdown = read_excel('~/Documents/USAID/mini projects/Fragile States - (Aaron Roesch)/fragility_maps_data.xlsx')
+                            #SBU_fragility_threats.xlsx')
 
-df2015 = df %>% 
-  filter(year == 2015) 
+# frag_breakdown2015 = frag_breakdown %>% 
+  # filter(year == 2015) 
 
 
 # import geo data ---------------------------------------------------------
 
 # import spatial data
 
-geo = frontier::shp2df(baseDir = '~/Documents/USAID/geodata/ne_10m_admin_0_countries_10pctsimpl/',
+geo = frontier::shp2frag_breakdown(baseDir = '~/Documents/USAID/geodata/ne_10m_admin_0_countries_10pctsimpl/',
                  layerName = 'ne_10m_admin_0_countries', getCentroids = FALSE)
 
 # land mass basemap
-land = frontier::shp2df(baseDir = '~/Documents/USAID/geodata/ne_10m_land_10pctsimpl/',
+land = frontier::shp2frag_breakdown(baseDir = '~/Documents/USAID/geodata/ne_10m_land_10pctsimpl/',
                        layerName = 'ne_10m_land', getCentroids = FALSE) 
 
 # find which code contains the correct iso code. options:
@@ -96,7 +97,7 @@ codes = data.frame(code = unique(geo$WB_A3),
                  in_ne = TRUE)
 
 # test merge
-x = full_join(df, codes, by = c("code"))
+x = full_join(frag_breakdown, codes, by = c("code"))
 
 View(x %>% filter(is.na(in_ne)))
 
@@ -109,7 +110,7 @@ geo = geo %>%
 codes = data.frame(code = unique(geo$code),
                    in_ne = TRUE)
 # test merge
-x = full_join(df, codes, by = c("code"))
+x = full_join(frag_breakdown, codes, by = c("code"))
 
 View(x %>% filter(is.na(in_ne)))
 
@@ -121,14 +122,14 @@ geo = geo %>%
   select(code, lat, long, group, order, id, REGION_WB, CONTINENT)
 
 # merge fragile data w/ geo data ------------------------------------------
-df_geo = full_join(df2015, geo, by = c("code"))
+frag_breakdown_geo = full_join(frag_breakdown2015, geo, by = c("code"))
 
 
 # choropleth --------------------------------------------------------------
 
-max_val = max(abs(range(df2015$al, na.rm = TRUE)))
+max_val = max(abs(range(frag_breakdown2015$al, na.rm = TRUE)))
 
-p = ggplot(df_geo %>% filter(CONTINENT == 'Africa'), aes_string(x = 'long', y = 'lat',
+p = ggplot(frag_breakdown_geo %>% filter(CONTINENT == 'Africa'), aes_string(x = 'long', y = 'lat',
                            group = 'group', order = 'order')) +
   geom_path(data = land, fill = grey15K) +
   geom_path(data = land, colour = '#89a3d1', size = 2) +
@@ -144,56 +145,56 @@ p = ggplot(df_geo %>% filter(CONTINENT == 'Africa'), aes_string(x = 'long', y = 
         rect = element_rect(fill = '#ffffff', colour = '#ffffff', size = 0, linetype = 1),
               panel.background = element_rect(fill = bg_fill))
 
-save_plot('~/Documents/USAID/mini projects/Fragile States - (Aaron Roesch)/al_score.pdf',
+save_plot('~/Documents/USAID/mini projects/Fragile States - (Aaron Roesch)/al_score.pfrag_breakdown',
           width = 7, height = 4)
 
-p = frontier::plot_map(df_geo, fill_var = 'factor(any_last5)') +
+p = frontier::plot_map(frag_breakdown_geo, fill_var = 'factor(any_last5)') +
   scale_fill_manual(values = c('0' = grey15K, '1' = brewer.pal(11, 'Spectral')[2]))
 
-save_plot('~/Documents/USAID/mini projects/Fragile States - (Aaron Roesch)/any_events_5y.pdf',
+save_plot('~/Documents/USAID/mini projects/Fragile States - (Aaron Roesch)/any_events_5y.pfrag_breakdown',
           width = 7, height = 4)
 
 
-p = frontier::plot_map(df_geo, fill_var = 'confdeaths') +
+p = frontier::plot_map(frag_breakdown_geo, fill_var = 'confdeaths') +
   scale_fill_gradientn(colours = brewer.pal(9, 'BuPu'),
                        na.value = grey15K)
 
-save_plot('~/Documents/USAID/mini projects/Fragile States - (Aaron Roesch)/confdeaths.pdf',
+save_plot('~/Documents/USAID/mini projects/Fragile States - (Aaron Roesch)/confdeaths.pfrag_breakdown',
           width = 7, height = 4)
 
-range(df$vedeaths, na.rm =  TRUE)
+range(frag_breakdown$vedeaths, na.rm =  TRUE)
 
-p = frontier::plot_map(df_geo, fill_var = 'vedeaths') +
+p = frontier::plot_map(frag_breakdown_geo, fill_var = 'vedeaths') +
   scale_fill_gradientn(colours = brewer.pal(9, 'BuPu'),
                        breaks = 
                        na.value = grey15K)
 
 
-save_plot('~/Documents/USAID/mini projects/Fragile States - (Aaron Roesch)/vedeaths.pdf',
+save_plot('~/Documents/USAID/mini projects/Fragile States - (Aaron Roesch)/vedeaths.pfrag_breakdown',
           width = 7, height = 4)
 
-p = frontier::plot_map(df_geo, fill_var = 'coups') +
+p = frontier::plot_map(frag_breakdown_geo, fill_var = 'coups') +
   scale_fill_gradientn(colours = brewer.pal(9, 'BuPu'),
                        na.value = grey15K)
 
 
-save_plot('~/Documents/USAID/mini projects/Fragile States - (Aaron Roesch)/coups.pdf',
+save_plot('~/Documents/USAID/mini projects/Fragile States - (Aaron Roesch)/coups.pfrag_breakdown',
           width = 7, height = 4)
 
-p = frontier::plot_map(df_geo, fill_var = 'rgmchngmag') +
+p = frontier::plot_map(frag_breakdown_geo, fill_var = 'rgmchngmag') +
   scale_fill_gradientn(colours = brewer.pal(9, 'BuPu'),
                        na.value = grey15K)
 
 
-save_plot('~/Documents/USAID/mini projects/Fragile States - (Aaron Roesch)/rgmchngmag.pdf',
+save_plot('~/Documents/USAID/mini projects/Fragile States - (Aaron Roesch)/rgmchngmag.pfrag_breakdown',
           width = 7, height = 4)
 
-p = frontier::plot_map(df_geo, fill_var = 'massatrocmag') +
+p = frontier::plot_map(frag_breakdown_geo, fill_var = 'massatrocmag') +
   scale_fill_gradientn(colours = brewer.pal(9, 'BuPu'),
                        na.value = grey15K)
 
 
-save_plot('~/Documents/USAID/mini projects/Fragile States - (Aaron Roesch)/massatrocmag.pdf',
+save_plot('~/Documents/USAID/mini projects/Fragile States - (Aaron Roesch)/massatrocmag.pfrag_breakdown',
           width = 7, height = 4)
 
 
@@ -206,10 +207,11 @@ ggplot(geo, aes_string(x = 'long', y = 'lat',
 
 
 
-p = frontier::plot_map(df_geo, fill_var = 'region') +
+p = frontier::plot_map(frag_breakdown_geo, fill_var = 'fill_color') +
+  scale_fill_identity()
   scale_fill_brewer(palette =  'Pastel1',
                        na.value = grey15K)
 
 
-save_plot('~/Documents/USAID/mini projects/Fragile States - (Aaron Roesch)/map_region.pdf',
+save_plot('~/Documents/USAID/mini projects/Fragile States - (Aaron Roesch)/map_region.pfrag_breakdown',
           width = 7, height = 4)
