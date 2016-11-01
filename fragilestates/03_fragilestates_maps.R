@@ -58,14 +58,14 @@ limits = data.frame(region = sort(unique(frag_overlap$region)),
                       -5.8e6 ,
                       3.5e6  ,
                       -3.8e6 ,
-                      0.8e6  ,
+                      1.2e6  ,
                       -1e7
                     ),
                     ymax = c(4e6, # Africa
                              6.2e6, # Asia
                              6.5e6, # E&E
                              3.9e6, # LAC
-                             5e6, # ME
+                             4.8e6, # ME
                              1e7 # NA
                     ))
 # lat/long
@@ -261,13 +261,16 @@ ggplot(frag_breakdown_sum %>% filter(!is.na(region)), aes(y =  event,
   geom_point(stroke = 0.25, alpha = 1,
              data = frag_breakdown_sum %>% filter(usaidcov == 0, !is.na(region)),
              shape = 21, fill = 'white') + 
-  facet_wrap(~region, ncol = 2) +
+  facet_wrap(~region, ncol = 1) +
   scale_alpha_manual(values = c('0' = 0., '1' = 1)) +
   scale_size(range = c(1, 8)) +
   scale_fill_identity() +
   scale_colour_identity() +
   scale_x_continuous(labels = scales::percent, breaks = c(0, 0.25, 0.5, 0.75)) +
   theme_xgrid()
+
+save_plot('~/Documents/USAID/mini projects/Fragile States - (Aaron Roesch)/event_breakdown.pdf',
+          width = 4, height = 16)
 
 # choropleth function --------------------------------------------------------------
 plot_choro = function(df = frag_breakdown_geo,
@@ -295,7 +298,7 @@ plot_choro = function(df = frag_breakdown_geo,
     geom_polygon(aes(alpha = factor(usaidcov)),
                  fill = grey40K) +
     geom_polygon(aes(fill = fill_color, alpha = factor(usaidcov)),
-                 data = df %>% filter_(paste0(fill_var,' == 1'))) +
+                 data = current_df %>% filter_(paste0(fill_var,' == 1'))) +
     # geom_polygon(aes_string(fill = paste0('factor(', fill_var, ')'),
     # alpha = 'factor(usaidcov)')) +
     geom_path(colour = grey75K, size = 0.06) +
@@ -335,10 +338,10 @@ p = ggplot(frag_breakdown_geo,
            aes_string(x = 'long', y = 'lat',
                       group = 'group', order = 'order')) +
   geom_path(data = land, colour = '#89a3d1', size = 1.5) +
-  geom_path(data = land, fill = grey15K, colour = NA, alpha = 1, size = 0) +
+  geom_polygon(data = land, fill = 'white', colour = NA, alpha = 1, size = 0) +
   geom_polygon(aes_string(fill = 'fill_color', alpha = 'coverage'), size = 0, colour = NA) +
   # geom_polygon(aes_string(fill = 'fill_color')) +
-  geom_path(colour = 'white', size = 0.06, fill = NA) +
+  geom_path(colour = grey75K, size = 0.06) +
   coord_equal() +
   
   theme_void() +
