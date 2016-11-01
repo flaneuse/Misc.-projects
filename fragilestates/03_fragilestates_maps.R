@@ -41,13 +41,13 @@ bg_fill = '#f6f8fb'
 limits = data.frame(region = sort(unique(frag_overlap$region)),
                     xmin = c(
                       -0.2e7,  
-                      0.4e7,   
+                      0.35e7,   
                       -0.1e7,  
                       -1e7,    
                       -0.2e7,  
                       -1e7),
                     xmax = c(0.5e7, # Africa
-                             1.5e7, # Asia,
+                             1.35e7, # Asia,
                              0.45e7, # E&E 
                              -0.3e7, # LAC
                              0.6e7, # ME
@@ -55,14 +55,14 @@ limits = data.frame(region = sort(unique(frag_overlap$region)),
                     
                     ymin = c(
                       -3.8e6 ,
-                      -5.8e6 ,
+                      -2e6 ,
                       3.5e6  ,
                       -3.8e6 ,
                       1.2e6  ,
                       -1e7
                     ),
                     ymax = c(4e6, # Africa
-                             6.2e6, # Asia
+                             6e6, # Asia
                              6.5e6, # E&E
                              3.9e6, # LAC
                              4.8e6, # ME
@@ -254,7 +254,7 @@ ggplot(frag_breakdown_sum %>% filter(!is.na(region)), aes(y =  event,
                                                           alpha = factor(usaidcov))) +
   geom_segment(aes(x = `0`, xend = `1`,
                    y = event, yend = event),
-               size = 0.5, colour = grey60K,
+               size = 0.35, colour = grey30K,
                alpha = 1,
                data = frag_breakdown_untidy %>% filter(!is.na(region))) +
   geom_point(stroke = 0.05, colour = grey90K, shape = 21) + 
@@ -272,6 +272,32 @@ ggplot(frag_breakdown_sum %>% filter(!is.na(region)), aes(y =  event,
 save_plot('~/Documents/USAID/mini projects/Fragile States - (Aaron Roesch)/event_breakdown.pdf',
           width = 4, height = 16)
 
+
+# bar plot -- only USAID ----------------------------------------------------------------
+
+df = frag_breakdown_sum %>% filter(!is.na(region), 
+                                   region == 'AFR', usaidcov == 1)
+
+ggplot(df, 
+       aes(y =  fct_reorder(event, total), 
+           x = total, 
+           fill = fill_color,
+           colour = fill_color,
+           size = n)) +
+  geom_segment(aes(x = 0, xend = total,
+                   y = fct_reorder(event, total),
+                   yend = fct_reorder(event, total)),
+               size = 0.35, colour = grey30K) +
+  geom_point(stroke = 0.05, colour = grey90K, shape = 21) + 
+  facet_wrap(~(region), ncol = 1, scales = 'free_y') +
+  scale_size(range = c(1, 8), limits = c(1, 47)) +
+  scale_fill_identity() +
+  scale_colour_identity() +
+  scale_x_continuous(labels = scales::percent, breaks = c(0, 0.25, 0.5, 0.75)) +
+  theme_xgrid()
+
+save_plot('~/Documents/USAID/mini projects/Fragile States - (Aaron Roesch)/event_breakdown.pdf',
+          width = 4, height = 16)
 # choropleth function --------------------------------------------------------------
 plot_choro = function(df = frag_breakdown_geo,
                       basemap = land,
