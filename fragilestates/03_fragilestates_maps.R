@@ -337,7 +337,7 @@
       geom_polygon(data = current_df, fill = 'white') +
       
       geom_polygon(aes(alpha = factor(usaidcov)),
-                   fill = grey40K) +
+                   fill = grey25K) +
       geom_polygon(aes(fill = fill_color, alpha = factor(usaidcov)),
                    data = current_df %>% filter_(paste0(fill_var,' == 1'))) +
       # geom_polygon(aes_string(fill = paste0('factor(', fill_var, ')'),
