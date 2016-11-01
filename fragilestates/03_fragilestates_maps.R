@@ -133,16 +133,25 @@
   # import spatial data
   
   geo = frontier::shp2df(baseDir = '~/Documents/USAID/geodata/ne_10m_admin_0_countries_10pctsimpl/',
-                         layerName = 'ne_10m_admin_0_countries', getCentroids = FALSE,
+                         layerName = 'ne_10m_admin_0_countries', 
+                         getCentroids = TRUE,
+                         labelVar = 'WB_A3',
                          reproject = TRUE,
                          projection = '+proj=wintri +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +no_defs')
   
+  geo_centroids = geo$centroids
+  geo = geo$df
+  
   # land mass basemap
-  land = frontier::shp2df(baseDir = '~/Documents/USAID/geodata/ne_10m_land_2pctsimpl/',
+  land_outline = frontier::shp2df(baseDir = '~/Documents/USAID/geodata/ne_10m_land_2pctsimpl/',
                           layerName = 'ne_10m_land', getCentroids = FALSE,
                           reproject = TRUE,
                           projection = '+proj=wintri +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +no_defs') 
   
+  land = frontier::shp2df(baseDir = '~/Documents/USAID/geodata/ne_10m_land_10pctsimpl/',
+                          layerName = 'ne_10m_land', getCentroids = FALSE,
+                          reproject = TRUE,
+                          projection = '+proj=wintri +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +no_defs') 
   # find which code contains the correct iso code. options:
   # ADM0_A3_US
   # ADM0_A3_IS
@@ -167,7 +176,7 @@
   # test merge
   x = full_join(frag_breakdown, codes, by = c("code"))
   
-  View(x %>% filter(is.na(in_ne)))
+  # View(x %>% filter(is.na(in_ne)))
   
   # merges everything, aside from Norway-- which is -99 in WB_A3
   
@@ -180,7 +189,7 @@
   # test merge
   x = full_join(frag_breakdown, codes, by = c("code"))
   
-  View(x %>% filter(is.na(in_ne)))
+  # View(x %>% filter(is.na(in_ne)))
   
   
   # Filter out extraneous geo data ------------------------------------------
@@ -192,8 +201,11 @@
   # merge fragile data w/ geo data ------------------------------------------
   frag_breakdown_geo = full_join(frag_breakdown, geo, by = c("code"))
   
+  # -- centers for labelling -- 
+  geo_centroids = full_join(frag_breakdown, geo_centroids, by = c("code" = "label"))
   
-  
+  geo_centroids = geo_centroids %>% 
+    filter(usaidcov == 1)
   
   
   # bar plot ----------------------------------------------------------------
@@ -312,6 +324,8 @@
   # choropleth function --------------------------------------------------------------
   plot_choro = function(df = frag_breakdown_geo,
                         basemap = land,
+                        ocean = land_outline,
+                        cntry_labels = geo_centroids,
                         fill_var,
                         limits,
                         bg_fill = "#f6f8fb",
@@ -324,31 +338,63 @@
     current_limits = limits %>% 
       filter(region == region_name)
     
+    current_centroids = cntry_labels %>% 
+      filter(region == region_name)
+    
+    # Find the correct color for the label
+    text_colour = case_when(region_name == 'AFR' ~ '#ad6c68',
+                            region_name == 'ASIA' ~ '#688197',
+                            region_name == 'E&E' ~ '#7d9973',
+                            region_name == 'LAC' ~ '#b0ad7e',
+                            region_name == 'ME' ~ '#b19062',
+                            TRUE ~ grey60K)
+    
     ggplot(current_df, 
            aes_string(x = 'long', y = 'lat',
                       group = 'group', order = 'order')) +
       
+      # -- gaussian blur fade --
+      geom_path(data = ocean, colour = '#89a3d1', size = 0.5) +
       
-      geom_path(data = basemap, colour = '#89a3d1', size = 0.5) +
+      # -- fill under entire area -- 
       geom_polygon(data = df, fill = grey5K) +
+      # -- continent outline --
       geom_path(data = basemap, colour = grey75K, size = 0.05) +
       
-      # for shadow -- just region
+      # -- fill just region for a shadow -- 
       geom_polygon(data = current_df, fill = 'white') +
       
+      # -- choropleth areas NOT experiencing event grey -- 
       geom_polygon(aes(alpha = factor(usaidcov)),
-                   fill = grey25K) +
+                   fill = grey25K, 
+                   data = current_df %>% filter_(paste0(fill_var,' == 0'))) +
+      
+      # -- choropleth areas experiencing event in Pastel1 --
       geom_polygon(aes(fill = fill_color, alpha = factor(usaidcov)),
                    data = current_df %>% filter_(paste0(fill_var,' == 1'))) +
-      # geom_polygon(aes_string(fill = paste0('factor(', fill_var, ')'),
-      # alpha = 'factor(usaidcov)')) +
+      
+      # -- label USAID countries --
+      geom_text(aes_string(group = '1', order = '1', 
+                    label = 'country',
+                    colour = paste0('factor(',
+                                    fill_var, ')')),
+                size = 4, 
+                family = 'Lato Light',
+                data = current_centroids) +
+      
+      # -- stroke regional country outlines --
       geom_path(colour = grey75K, size = 0.06) +
+      
+      # -- crop area of interest --
       coord_equal(xlim = c(current_limits$xmin, current_limits$xmax), 
                   ylim = c(current_limits$ymin, current_limits$ymax)) +
       
+      # -- scales --
       scale_fill_identity() +
-      # scale_fill_manual(values = c('0' = grey25K, '1' = fill_colour)) + 
+      scale_colour_manual(values = c('0' = grey60K, '1' = text_colour)) + 
       scale_alpha_manual(values = c('0' = 0.25, '1' = 1)) +
+      
+      # -- themes --
       theme_void() +
       theme(legend.position = 'none',
             rect = element_rect(fill = '#ffffff', colour = '#ffffff', size = 0, linetype = 1),
@@ -360,7 +406,7 @@
   regions = unique(frag_overlap$region)
   regions = setdiff(regions, 'NA') # ignore North America
   
-  vars = c('al_bicat', 'any_last5')
+  vars = c('al_bicat', 'any_last5', 'confvemin_last5', 'econshock_last5', 'crime_last5', 'coup_last5')
   
   for (i in seq_along(regions)) {
     for(j in seq_along(vars)) {
