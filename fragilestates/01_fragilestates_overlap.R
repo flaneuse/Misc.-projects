@@ -59,27 +59,23 @@ frag_overlap = frag_overlap %>%
                                 frag_overlap$region == 'E&E' ~ color_ee,
                                 frag_overlap$region == 'NA' ~ color_na,
                                 TRUE ~ color_else)) %>% 
-  filter(!country %in% c('China', 'India')) %>% 
   group_by(no_lists) %>% 
   arrange(desc(region), desc(pop)) %>% 
   mutate(r = pop / 1e7)
-# mutate(r = log10(budget),
-# mutate(r = log10(pop),
-# area = pi * r^2,
-# r2 = lead(pop/1e6)) %>% 
-# mutate(x = cumsum(r + r2))
+
+frag_overlap_circles = frag_overlap %>% 
+  filter(!country %in% c('China', 'India'))
 
 
-
-calc_packing = function(frag_overlap,
+calc_packing = function(frag_overlap_circles,
                         filename, 
                         height_plot = 10,
                         width_plot = 10){
   # Find the average radius for each group
-  avg_r = mean(frag_overlap$r)
+  avg_r = mean(frag_overlap_circles$r)
   
   init_coords = 
-    frag_overlap %>% 
+    frag_overlap_circles %>% 
     arrange(desc(region), coverage) %>% 
     mutate(grp_num = dense_rank(region),
            id = row_number(region)) %>% 
@@ -112,7 +108,7 @@ calc_packing = function(frag_overlap,
   opt_layout = circleLayout(init_coords , xlim = limits, ylim = limits,
                             weights = 1, wrap = TRUE)
   
-  circle_centroids = bind_cols(opt_layout$layout, data.frame(id = 1:nrow(frag_overlap)))
+  circle_centroids = bind_cols(opt_layout$layout, data.frame(id = 1:nrow(frag_overlap_circles)))
   
   
   # Convert centers, radii into cartesian coordinates -----------------------
@@ -121,7 +117,7 @@ calc_packing = function(frag_overlap,
   # the center and radii into coordinates that can be used with geom_polygon.
   circle_coords = circlePlotData(circle_centroids, npoints = 100)
   
-  full_data = bind_cols(frag_overlap  %>% arrange(desc(region), coverage), data.frame(id = 1:nrow(frag_overlap))) %>% 
+  full_data = bind_cols(frag_overlap_circles  %>% arrange(desc(region), coverage), data.frame(id = 1:nrow(frag_overlap_circles))) %>% 
     select(id, country, region, coverage, pop, budget, fill_color, r, no_lists)
   
   # Bind original data
@@ -158,20 +154,20 @@ calc_packing = function(frag_overlap,
 }
 
 # plot --------------------------------------------------------------------
-frag_overlap_plot = frag_overlap %>% filter(no_lists == 1)
+frag_overlap_plot = frag_overlap_circles %>% filter(no_lists == 1)
 calc_packing(frag_overlap_plot, '~/Documents/USAID/mini projects/Fragile States - (Aaron Roesch)/fragile_circles1.pdf')
 
-frag_overlap_plot = frag_overlap %>% filter(no_lists == 2)
+frag_overlap_plot = frag_overlap_circles %>% filter(no_lists == 2)
 calc_packing(frag_overlap_plot, '~/Documents/USAID/mini projects/Fragile States - (Aaron Roesch)/fragile_circles2.pdf')
 
-frag_overlap_plot = frag_overlap %>% filter(no_lists == 3)
+frag_overlap_plot = frag_overlap_circles %>% filter(no_lists == 3)
 calc_packing(frag_overlap_plot, '~/Documents/USAID/mini projects/Fragile States - (Aaron Roesch)/fragile_circles3.pdf')
 
-regions = unique(frag_overlap$region)
+regions = unique(frag_overlap_circles$region)
 
 for(i in seq_along(regions)){
   
-  frag_overlap_plot = frag_overlap %>% filter(no_lists == 0, region == regions[i])
+  frag_overlap_plot = frag_overlap_circles %>% filter(no_lists == 0, region == regions[i])
   
   p=calc_packing(frag_overlap_plot, paste0('~/Documents/USAID/mini projects/Fragile States - (Aaron Roesch)/fragile_circles0_',
                                            regions[i], '.pdf'))

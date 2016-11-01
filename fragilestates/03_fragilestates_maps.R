@@ -18,19 +18,19 @@
 # * adverse regime change
 # * mass atrocity
 
- #  anybroad_last5: any of the 
- # confvemin_last5: minor conflict or minor violent extremism
- #        al_bicat: alert list == 1
- #       any_last5: any severe violence or instability
- #  climrisk_last5: climate risk
- # econshock_last5: major economic shock
- #     crime_last5: high violent crime
- #   confmaj_last5: major confligt
- #     vemaj_last5: major violent extremism 
- #   rgmchng_last5: adverse regime change 
- #      coup_last5: coup d'etat
- #  disaster_last5: natural disaster
- # massatroc_last5: mass atrocities
+#  anybroad_last5: any of the 
+# confvemin_last5: minor conflict or minor violent extremism
+#        al_bicat: alert list == 1
+#       any_last5: any severe violence or instability
+#  climrisk_last5: climate risk
+# econshock_last5: major economic shock
+#     crime_last5: high violent crime
+#   confmaj_last5: major conflict
+#     vemaj_last5: major violent extremism 
+#   rgmchng_last5: adverse regime change 
+#      coup_last5: coup d'etat
+#  disaster_last5: natural disaster
+# massatroc_last5: mass atrocities
 
 
 # setup params ------------------------------------------------------------
@@ -38,17 +38,48 @@
 
 bg_fill = '#f6f8fb'
 
-lac_xlim = c(-120, -35)
-lac_ylim = c(-35, 30)
-
-afr_xlim = c(-15, 60)
-afr_ylim = c(-36, 39)
-
-ee_xlim = c(15, 52)
-ee_ylim = c(35, 57)
-
-asia_xlim = c(60, 145)
-asia_ylim = c(-13, 55)
+limits = data.frame(region = sort(unique(frag_overlap$region)),
+                    xmin = c(
+                      -0.2e7,  
+                      0.4e7,   
+                      -0.1e7,  
+                      -1e7,    
+                      -0.2e7,  
+                      -1e7),
+                    xmax = c(0.5e7, # Africa
+                             1.5e7, # Asia,
+                             0.45e7, # E&E 
+                             -0.3e7, # LAC
+                             0.6e7, # ME
+                             1e7),
+                    
+                    ymin = c(
+                      -3.8e6 ,
+                      -5.8e6 ,
+                      3.5e6  ,
+                      -3.8e6 ,
+                      0.8e6  ,
+                      -1e7
+                    ),
+                    ymax = c(4e6, # Africa
+                             6.2e6, # Asia
+                             6.5e6, # E&E
+                             3.9e6, # LAC
+                             5e6, # ME
+                             1e7 # NA
+                    ))
+# lat/long
+# lac_xlim = c(-120, -35)
+# lac_ylim = c(-35, 30)
+# 
+# afr_xlim = c(-15, 60)
+# afr_ylim = c(-36, 39)
+# 
+# ee_xlim = c(15, 52)
+# ee_ylim = c(35, 57)
+# 
+# asia_xlim = c(60, 145)
+# asia_ylim = c(-13, 55)
 
 # libraries to load -------------------------------------------------------
 library(devtools)
@@ -102,13 +133,13 @@ frag_breakdown = left_join(frag_breakdown,
 # import spatial data
 
 geo = frontier::shp2df(baseDir = '~/Documents/USAID/geodata/ne_10m_admin_0_countries_10pctsimpl/',
-                                   layerName = 'ne_10m_admin_0_countries', getCentroids = FALSE,
+                       layerName = 'ne_10m_admin_0_countries', getCentroids = FALSE,
                        reproject = TRUE,
                        projection = '+proj=wintri +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +no_defs')
 
 # land mass basemap
 land = frontier::shp2df(baseDir = '~/Documents/USAID/geodata/ne_10m_land_2pctsimpl/',
-                                    layerName = 'ne_10m_land', getCentroids = FALSE,
+                        layerName = 'ne_10m_land', getCentroids = FALSE,
                         reproject = TRUE,
                         projection = '+proj=wintri +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +no_defs') 
 
@@ -162,31 +193,6 @@ geo = geo %>%
 frag_breakdown_geo = full_join(frag_breakdown, geo, by = c("code"))
 
 
-# choropleth function --------------------------------------------------------------
-plot_choro = function(fill_var, 
-                      fill_colour = brewer.pal(11, 'Spectral')[2]) {
-  ggplot(frag_breakdown_geo, 
-         aes_string(x = 'long', y = 'lat',
-                    group = 'group', order = 'order')) +
-    geom_path(data = land, fill = grey15K) +
-    geom_path(data = land, colour = '#89a3d1', size = 1.5, fill = NA) +
-    geom_polygon(aes(alpha = factor(usaidcov)),
-                 fill = grey30K) +
-    geom_polygon(aes(fill = fill_color, alpha = factor(usaidcov)),
-                 data = frag_breakdown_geo %>% filter_(paste0(fill_var,' == 1'))) +
-    # geom_polygon(aes_string(fill = paste0('factor(', fill_var, ')'),
-                                          # alpha = 'factor(usaidcov)')) +
-    geom_path(colour = 'white', size = 0.06, fill = NA) +
-    coord_equal() +
-    
-    scale_fill_identity() +
-    # scale_fill_manual(values = c('0' = grey25K, '1' = fill_colour)) + 
-    scale_alpha_manual(values = c('0' = 0.25, '1' = 0.75)) +
-    theme_void() +
-    theme(legend.position = 'none',
-          rect = element_rect(fill = '#ffffff', colour = '#ffffff', size = 0, linetype = 1),
-          panel.background = element_rect(fill = bg_fill))
-}
 
 
 
@@ -230,12 +236,12 @@ region_order = frag_breakdown %>%
   arrange(desc(total))
 
 frag_breakdown_sum$region = factor(frag_breakdown_sum$region,
-                                    levels = region_order$region)
-frag_breakdown_untidy$region = factor(frag_breakdown_untidy$region,
                                    levels = region_order$region)
+frag_breakdown_untidy$region = factor(frag_breakdown_untidy$region,
+                                      levels = region_order$region)
 
 frag_breakdown_sum$event = factor(frag_breakdown_sum$event,
-                                    levels = event_order$event)
+                                  levels = event_order$event)
 frag_breakdown_untidy$event = factor(frag_breakdown_untidy$event,
                                      levels = event_order$event)
 
@@ -263,26 +269,71 @@ ggplot(frag_breakdown_sum %>% filter(!is.na(region)), aes(y =  event,
   scale_x_continuous(labels = scales::percent, breaks = c(0, 0.25, 0.5, 0.75)) +
   theme_xgrid()
 
-# choros of binary vars ---------------------------------------------------
+# choropleth function --------------------------------------------------------------
+plot_choro = function(df = frag_breakdown_geo,
+                      basemap = land,
+                      fill_var,
+                      limits,
+                      bg_fill = "#f6f8fb",
+                      region_name) {
+  
+  # Filter out the relevant data
+  current_df = df %>% 
+    filter(region == region_name)
+  
+  current_limits = limits %>% 
+    filter(region == region_name)
+  
+  ggplot(current_df, 
+         aes_string(x = 'long', y = 'lat',
+                    group = 'group', order = 'order')) +
+    
+    
+    geom_path(data = basemap, colour = '#89a3d1', size = 1.5) +
+    geom_polygon(data = df, fill = grey5K) +
+    
+    geom_polygon(aes(alpha = factor(usaidcov)),
+                 fill = grey40K) +
+    geom_polygon(aes(fill = fill_color, alpha = factor(usaidcov)),
+                 data = df %>% filter_(paste0(fill_var,' == 1'))) +
+    # geom_polygon(aes_string(fill = paste0('factor(', fill_var, ')'),
+    # alpha = 'factor(usaidcov)')) +
+    geom_path(colour = grey75K, size = 0.06) +
+    coord_equal(xlim = c(current_limits$xmin, current_limits$xmax), 
+                ylim = c(current_limits$ymin, current_limits$ymax)) +
+    
+    scale_fill_identity() +
+    # scale_fill_manual(values = c('0' = grey25K, '1' = fill_colour)) + 
+    scale_alpha_manual(values = c('0' = 0.25, '1' = 0.75)) +
+    theme_void() +
+    theme(legend.position = 'none',
+          rect = element_rect(fill = '#ffffff', colour = '#ffffff', size = 0, linetype = 1),
+          panel.background = element_rect(fill = bg_fill))
+}
 
 
-plot_choro('al_bicat') + coord_equal(xlim = afr_xlim, ylim = afr_ylim)
-plot_choro('any_last5')  + coord_equal(xlim = afr_xlim, ylim = afr_ylim)
-plot_choro('disaster_last5') + coord_equal(xlim = afr_xlim, ylim = afr_ylim)
-# scale_fill_gradientn(colours = rev(brewer.pal(10, 'RdYlBu')), 
-# limits = c(-max_val, max_val),
-# na.value = grey15K) +
-# max_val = max(abs(range(frag_breakdown$al, na.rm = TRUE)))
+# loop over choros --------------------------------------------------------
+regions = unique(frag_overlap$region)
+regions = setdiff(regions, 'NA') # ignore North America
 
+vars = c('al_bicat', 'any_last5')
 
-
+for (i in seq_along(regions)) {
+  for(j in seq_along(vars)) {
+    plot_choro(fill_var = vars[j], region = regions[i], limits = limits) 
+    
+    save_plot(filename = paste0('~/Documents/USAID/mini projects/Fragile States - (Aaron Roesch)/',
+                                regions[i], '-', vars[j], '.pdf'),
+              width = 4)
+  }
+}
 
 # basic map of regions ----------------------------------------------------
 
 
 p = ggplot(frag_breakdown_geo, 
-             aes_string(x = 'long', y = 'lat',
-                        group = 'group', order = 'order')) +
+           aes_string(x = 'long', y = 'lat',
+                      group = 'group', order = 'order')) +
   geom_path(data = land, colour = '#89a3d1', size = 1.5) +
   geom_path(data = land, fill = grey15K, colour = NA, alpha = 1, size = 0) +
   geom_polygon(aes_string(fill = 'fill_color', alpha = 'coverage'), size = 0, colour = NA) +
