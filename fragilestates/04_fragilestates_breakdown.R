@@ -5,7 +5,7 @@ region_sum = frag_breakdown %>%
          usaidcov == 1) %>% 
   group_by(region) %>%
   summarise(avg = mean(anybroad_last10), n = n()) %>% 
-  arrange(desc(n)) 
+  arrange(desc(n), desc(region)) 
 
 region_sum = region_sum %>% 
   mutate(region_name = case_when(region_sum$region == 'AFR' ~ 'Africa',
