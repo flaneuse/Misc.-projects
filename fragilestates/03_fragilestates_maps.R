@@ -336,8 +336,8 @@ for(i in seq_along(regions)){
   
   save_plot(paste0('~/Documents/USAID/mini projects/Fragile States - (Aaron Roesch)/event_breakdown-',
                    regions[i], '.pdf'),
-            # width = 5.5, height = 2.15)
-            width = 5.5, height = 4)
+            width = 5.5, height = 2.15)
+            # width = 5.5, height = 3)
 }
 
 # choropleth function --------------------------------------------------------------
