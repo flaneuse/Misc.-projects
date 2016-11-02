@@ -279,7 +279,7 @@
     scale_size(range = c(1, 8)) +
     scale_fill_identity() +
     scale_colour_identity() +
-    scale_x_continuous(labels = scales::percent, breaks = c(0, 0.25, 0.5, 0.75)) +
+    scale_x_continuous(labels = scales::percent, breaks = c(0, 0.25, 0.5, 0.75, 1)) +
     theme_xgrid()
   
   save_plot('~/Documents/USAID/mini projects/Fragile States - (Aaron Roesch)/event_breakdown.pdf',
@@ -302,7 +302,7 @@
                        y = fct_reorder(event, total),
                        yend = fct_reorder(event, total)),
                    size = 0.35, colour = grey30K) +
-      geom_point(stroke = 0.05, colour = 'white', shape = 21) + 
+      geom_point(stroke = 0.05, colour = grey90K, shape = 21) + 
       geom_text(aes(label = percent(total, 0)),
                 hjust = 0,
                 family = 'Lato Light',
@@ -313,8 +313,8 @@
       scale_fill_identity() +
       scale_colour_identity() +
       scale_x_continuous(labels = scales::percent, 
-                         limits = c(0, 0.75),
-                         breaks = c(0, 0.25, 0.5, 0.75)) +
+                         limits = c(0, 1),
+                         breaks = c(0, 0.25, 0.5, 0.75, 1)) +
       theme_xgrid()
     
     save_plot(paste0('~/Documents/USAID/mini projects/Fragile States - (Aaron Roesch)/event_breakdown-',
@@ -407,7 +407,9 @@
   regions = unique(frag_overlap$region)
   regions = setdiff(regions, 'NA') # ignore North America
   
-  vars = c('any', 'anybroad_last10', 'any_last10')
+  vars = c('any', 'anybroad_last10', 'any_last10', 
+           'econshock_last5', 'coup_last10', 'confvemin_last10',
+           'crime_last10', 'disaster_last10')
   # vars = c('al_bicat', 'any_last5', 'confvemin_last5', 'econshock_last5', 'crime_last5', 'coup_last5')
   
   for (i in seq_along(regions)) {
