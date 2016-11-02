@@ -121,3 +121,10 @@ ggplot(any10, aes(x = region)) +
   theme(axis.title.y = element_blank())
 
 
+# mini version ------------------------------------------------------------
+
+df = frag_breakdown %>% 
+  filter(usaidcov == 1) %>% 
+  summarise(any = mean(any), any10 = mean(any_last10), anyminor = mean(anybroad_last10), n = n())
+
+df %>% mutate_all(funs((. * 4)))
