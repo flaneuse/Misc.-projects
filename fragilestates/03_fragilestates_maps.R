@@ -116,8 +116,9 @@
   # import data -------------------------------------------------------------
   
   # fragile scores and threats
-  frag_breakdown = read_excel('~/Documents/USAID/mini projects/Fragile States - (Aaron Roesch)/fragility_maps_data.xlsx')
+  # frag_breakdown = read_excel('~/Documents/USAID/mini projects/Fragile States - (Aaron Roesch)/fragility_maps_data.xlsx')
   #SBU_fragility_threats.xlsx')
+  frag_breakdown = read_excel('~/Documents/USAID/mini projects/Fragile States - (Aaron Roesch)/fragility_maps_data_10y.xlsx')
   
   # merge with frag_overlap to get the regional codes
   frag_breakdown = left_join(frag_breakdown, 
@@ -221,7 +222,7 @@
     spread(usaidcov, total)
   
   # Relevel
-  # Event totals:
+  # Event totals: (last 5 y)
   # 1  confvemin_last5    53
   # 2   climrisk_last5    21
   # 3  econshock_last5    21
@@ -375,10 +376,10 @@
       
       # -- label USAID countries --
       geom_text(aes_string(group = '1', order = '1', 
-                    label = 'country',
+                    label = 'stringr::str_to_upper(country)',
                     colour = paste0('factor(',
                                     fill_var, ')')),
-                size = 4, 
+                size = 2.5, 
                 family = 'Lato Light',
                 data = current_centroids) +
       
@@ -406,7 +407,8 @@
   regions = unique(frag_overlap$region)
   regions = setdiff(regions, 'NA') # ignore North America
   
-  vars = c('al_bicat', 'any_last5', 'confvemin_last5', 'econshock_last5', 'crime_last5', 'coup_last5')
+  vars = c('any', 'anybroad_last10', 'any_last10')
+  # vars = c('al_bicat', 'any_last5', 'confvemin_last5', 'econshock_last5', 'crime_last5', 'coup_last5')
   
   for (i in seq_along(regions)) {
     for(j in seq_along(vars)) {
