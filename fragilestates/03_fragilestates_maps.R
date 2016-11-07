@@ -287,6 +287,19 @@ save_plot('~/Documents/USAID/mini projects/Fragile States - (Aaron Roesch)/event
 
 
 # bar plot -- only USAID ----------------------------------------------------------------
+# label event as major or minor
+frag_breakdown_sum = frag_breakdown_sum %>% 
+  mutate(major_event = ifelse(event %in% c('confmaj_last10',
+                                           'vemaj_last10',
+                                           'coup_last10', 
+                                           'rgmchng_last10',
+                                           'massatroc_last10'), 'major',
+                              ifelse(event %in% c('confvemin_last10',
+                                                  'crime_last10',
+                                                  'disaster_last10',
+                                                  'econshock_last5',
+                                                  'climrisk_last10'), 'minor', NA)))
+
 frag_breakdown_sum$event = factor(frag_breakdown_sum$event,
                                   levels = c("massatroc_last10", 
                                              "rgmchng_last10",
@@ -300,6 +313,8 @@ frag_breakdown_sum$event = factor(frag_breakdown_sum$event,
                                              'major economic shock', 'minor conflict/violent extremism')
 )
 
+
+
 frag_breakdown_sum = frag_breakdown_sum %>% 
   filter(!is.na(event))
 
@@ -307,15 +322,21 @@ for(i in seq_along(regions)){
   df = frag_breakdown_sum %>% filter(!is.na(region), 
                                      region == regions[i], usaidcov == 1)
   
+  event_order = df %>% 
+    arrange(desc(major_event), total)
+  
+  # refactor by major first, then by prevalence
+  df$event = factor(df$event, levels = event_order$event)
+  
   ggplot(df, 
-         aes(y =  fct_reorder(event, total), 
+         aes(y =  event, 
              x = total, 
-             fill = fill_color,
+             fill = total,
              colour = fill_color,
              size = n)) +
     geom_segment(aes(x = 0, xend = total,
-                     y = fct_reorder(event, total),
-                     yend = fct_reorder(event, total)),
+                     y = event,
+                     yend = event),
                  size = 0.35, colour = grey30K) +
     geom_point(stroke = 0.05, colour = grey90K, shape = 21) + 
     geom_text(aes(label = percent(total, 0)),
@@ -325,7 +346,8 @@ for(i in seq_along(regions)){
               colour = grey60K,
               size = 4) +
     scale_size(range = c(1, 5), limits = c(1, 47)) +
-    scale_fill_identity() +
+    scale_fill_gradientn(colours = c('#ffffcc', '#e5d8bd', '#988b6f'),
+                         limits = c(0, 0.85)) + 
     scale_colour_identity() +
     scale_x_continuous(labels = scales::percent, 
                        limits = c(0, 1),
@@ -336,8 +358,8 @@ for(i in seq_along(regions)){
   
   save_plot(paste0('~/Documents/USAID/mini projects/Fragile States - (Aaron Roesch)/event_breakdown-',
                    regions[i], '.pdf'),
-            width = 5.5, height = 2.15)
-            # width = 5.5, height = 3)
+            # width = 4.75, height = 2.15)
+            width = 4.75, height = 3)
 }
 
 # choropleth function --------------------------------------------------------------
