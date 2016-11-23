@@ -200,7 +200,7 @@ ggplot(data = comb, aes(x = chg_RALS, y = chg_LCMS)) +
              size = 5, alpha = 0.3) +
   coord_equal(ratio = 1, ylim = c(-0.2, 0.2),  xlim = c(-0.2, 0.2)) +
   scale_fill_gradientn(colours = brewer.pal(11, 'RdYlBu')) +
-  theme_xygridlight()
+  theme_xygrid()
 
 
 
