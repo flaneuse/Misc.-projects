@@ -9,6 +9,7 @@ library(frontier)
 library(dplyr)
 library(ggplot2)
 library(RColorBrewer)
+library(maptools)
 
 # select countries --------------------------------------------------------
 
@@ -37,10 +38,22 @@ ftf_codes = llamar::getDHScountry(c(ftf, ftf_addit))
 
 # import DHS data ---------------------------------------------------------
 stunting = llamar::loadDHS(breakdown = 'subnational', indicators = 'CN_NUTS_C_HA2',
-                countries = ftf_codes, apiKey = 'USAAID-405632', numResults = 5000)
+                           countries = ftf_codes, apiKey = 'USAAID-405632', numResults = 5000)
+# shapefile from DHS website should have only the good names of the Admin1.
+# Since Admin1's occasionally break up, for continuity, DHS reports on old and new names.
+stunting = read_shp('~/Creative Cloud Files/MAV/Projects/FTF/DHS_stunting_shp/shps', 
+                    layerName = 'sdr_subnational_data')
+stunting = stunting@data
+
+stunting = stunting %>% 
+  rename(SurveyYear = SVYYEAR,
+         CountryName = CNTRYNAMEE,
+         CharacteristicLabel = DHSREGEN,
+         Value = CNNUTSCHA2)
+
 
 natl = llamar::loadDHS(breakdown = 'national', indicators = 'CN_NUTS_C_HA2',
-                           countries = ftf_codes, apiKey = 'USAAID-405632', numResults = 5000)
+                       countries = ftf_codes, apiKey = 'USAAID-405632', numResults = 5000)
 
 # find most recent year ---------------------------------------------------
 recent_year = natl %>% 
@@ -57,7 +70,7 @@ recent_sub = left_join(recent_year, stunting) %>%
   filter(SurveyYear > 2006) %>% 
   arrange(desc(Value)) %>% 
   mutate(country = paste0(CountryName, ' (', SurveyYear, ')'))
-  
+
 
 # refactor ----------------------------------------------------------------
 
@@ -82,14 +95,19 @@ ggplot(natl) +
   geom_line(aes(x = SurveyYear, y = Value, group = CountryName),
             colour = grey90K) +
   geom_point(aes(x = SurveyYear, y = Value, group = CountryName),
-             size = 2, data = recent_data,
+             size = 1.5, stroke = 0.1,
+             colour = grey90K, fill = grey30K, shape = 21) +
+  geom_point(aes(x = SurveyYear, y = Value, group = CountryName),
+             size = 2.5, data = recent_data,
+             stroke = 0.1, shape = 21,
+             fill = grey90K, 
              colour = grey90K) +
   geom_text(aes(x = SurveyYear, y = Value, 
                 label = paste0(round(Value), '%'), 
                 group = CountryName),
             family = 'Lato Light',
             data = recent_data,
-  size = 4, colour = grey90K, nudge_y = 10) +
+            size = 4, colour = grey90K, nudge_y = 10) +
   geom_rect(aes(xmin=xmin, xmax=xmax, 
                 ymin=ymin,ymax=ymax,
                 fill = fill),
@@ -127,7 +145,49 @@ p = ggplot(recent_sub) +
         panel.spacing = unit(1, 'lines'),
         axis.text.y = element_text(size = 7),
         strip.text = element_text(size = 9)
-        )
- 
+  )
+
 save_plot('~/Creative Cloud Files/MAV/Projects/FTF/FTF_subnatl_stuntingDHS', saveBoth = TRUE, 
+          width = 14, height = 10)
+
+recent_sub=recent_sub %>% filter(!is.na(CharacteristicLabel))
+
+for(i in unique(recent_sub$CountryName)){
+  data2plot = recent_sub %>% filter(CountryName == i)
+  
+  num_regions = length(unique(data2plot$CharacteristicLabel))
+  
+  plot_dot(data2plot, value_var =  'Value', label_digits = 0, value_label_offset = 7,
+           by_var = 'forcats::fct_reorder(CharacteristicLabel, Value, .desc=FALSE)', 
+           sort_by = 'Value', scales = 'free_y', grey_background = TRUE,
+           facet_var = 'country', lollipop = T, dot_fill_cont = rev(pal[1:5])) +
+    scale_x_continuous(limits = c(0, 60)) +
+    scale_fill_gradientn(colours = rev(pal[1:5]), limits = c(6.6, 55.3))
+    # ggtitle('Stunting prevalence varies across the countries') +
+  
+  save_plot(paste0('~/Creative Cloud Files/MAV/Projects/FTF/lollipops/FTF_subnatlLolli_stuntingDHS_', i, '.png'), 
+          width = 3, height = num_regions/2.5)
+}
+
+# DHS shapefiles w/ data: ------------------------------------------------- 
+# Downloaded from http://spatialdata.dhsprogram.com/data/#/single/surveys/indicators/download
+
+dhs_shp = shp2df('~/Creative Cloud Files/MAV/Projects/FTF/DHS_stunting_shp/shps', 
+                 layerName = 'sdr_subnational_data', getCentroids = F)
+
+p2 = plot_map(dhs_shp, fill_var = 'CNNUTSCHA2') +
+  scale_fill_gradientn(colours = rev(pal[1:5])) +
+  facet_wrap(~CNTRYNAMEE, scales = 'free') +
+  coord_equal() +
+  theme_void()
+
+save_plot('~/Creative Cloud Files/MAV/Projects/FTF/FTF_map_stuntingDHS.pdf', 
+          width = 14, height = 10)
+
+p2 = plot_map(dhs_shp, fill_var = 'CNNUTSCHA2', stroke_size = 0) +
+  scale_fill_gradientn(colours = rev(pal[1:5])) +
+  coord_equal() +
+  theme_void()
+
+save_plot('~/Creative Cloud Files/MAV/Projects/FTF/FTF_world_stuntingDHS.pdf', 
           width = 14, height = 10)
