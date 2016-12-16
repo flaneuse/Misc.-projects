@@ -129,4 +129,4 @@ p = ggplot(recent_sub) +
         )
  
 save_plot('~/Creative Cloud Files/MAV/Projects/FTF/FTF_subnatl_stuntingDHS', saveBoth = TRUE, 
-          width = 10, height = 10)
+          width = 14, height = 10)
