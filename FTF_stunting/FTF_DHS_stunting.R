@@ -54,6 +54,7 @@ recent_data = left_join(recent_year, natl) %>%
   mutate(country = paste0(CountryName, ' (', SurveyYear, ')'))
 
 recent_sub = left_join(recent_year, stunting) %>% 
+  filter(SurveyYear > 2006) %>% 
   arrange(desc(Value)) %>% 
   mutate(country = paste0(CountryName, ' (', SurveyYear, ')'))
   
