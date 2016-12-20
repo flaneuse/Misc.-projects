@@ -16,6 +16,8 @@ library(maptools)
 countries = c(
         'Malawi',
         'Mozambique',
+        'Madagascar',
+        'Lesotho',
         'South Africa',
         'Zambia')
 
@@ -73,6 +75,11 @@ rect = data.frame(xmin = rep(1995,3), xmax = rep(2016,3),
                   fill = c(pal[5], pal[4], pal[3]))
 
 ggplot(natl) +
+  geom_rect(aes(xmin=xmin, xmax=xmax, 
+                ymin=ymin,ymax=ymax,
+                fill = fill),
+            data = rect,
+            alpha = alpha_bg) +
   geom_line(aes(x = SurveyYear, y = Value, group = CountryName),
             colour = grey90K) +
   geom_point(aes(x = SurveyYear, y = Value, group = CountryName),
@@ -84,33 +91,31 @@ ggplot(natl) +
              fill = grey90K, 
              colour = grey90K) +
   geom_text(aes(x = SurveyYear, y = Value, 
-                label = percent(Value, 1), 
+                label = paste0(percent(Value, 1),
+                               '\n (',
+                               SurveyYear, ')'),
                 group = CountryName),
             family = 'Lato Light',
             data = recent_data,
             size = 4, colour = grey90K, nudge_y = 0.10) +
-  geom_rect(aes(xmin=xmin, xmax=xmax, 
-                ymin=ymin,ymax=ymax,
-                fill = fill),
-            data = rect,
-            alpha = alpha_bg) +
-  facet_wrap(~CountryName) +
-  ggtitle('Percent of stunted children under 5 in FTF countries',
+  facet_wrap(~CountryName, ncol = 5) +
+  ggtitle('Percent of stunted children under 5 in Southern Africa',
           subtitle = 'Source: Demographic and Health Surveys') +
   scale_fill_identity() +
   scale_x_continuous(limits = c(1995, 2016),
                      breaks = seq(1995, 2016, by = 10),
+                     name = 'survey year',
                      minor_breaks = seq(1995, 2016, by = 5)) +
   scale_y_continuous(breaks = seq(0, 0.60, by = 0.20), limits = c(0, 0.62),
                      labels = percent) + 
   theme_xygrid() +
   theme(panel.grid.minor.x = element_line(colour = grey60K, size = 0.1),
         panel.spacing = unit(1, 'lines'),
-        
+        axis.title.y = element_blank(),
         plot.subtitle = element_text(family = 'Lato Light', size = 12))
 
 save_plot('~/Creative Cloud Files/MAV/Projects/SouthernAfrica_RDCS/stunting_time', saveBoth = TRUE, 
-          width = 10, height = 5)
+          width = 12.5, height = 4)
 
 # # geographic variation ----------------------------------------------------
 # 
