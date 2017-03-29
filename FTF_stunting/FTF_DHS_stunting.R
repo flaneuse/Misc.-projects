@@ -5,7 +5,7 @@
 
 # load libraries ----------------------------------------------------------
 library(llamar)
-library(frontier)
+library(geocenter)
 library(dplyr)
 library(ggplot2)
 library(RColorBrewer)

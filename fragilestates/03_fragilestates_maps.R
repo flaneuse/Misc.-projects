@@ -83,10 +83,10 @@ limits = data.frame(region = sort(unique(frag_overlap$region)),
 
 # libraries to load -------------------------------------------------------
 library(devtools)
-install_github('flaneuse/frontier')
+install_github('flaneuse/geocenter')
 
 pkgs = c('llamar', 'dplyr', 'tidyr', 
-         'frontier', 'maptools',
+         'geocenter', 'maptools',
          'RColorBrewer', 'extrafont', 'readxl')
 
 # Install and load packages -----------------------------------------------
@@ -133,7 +133,7 @@ frag_breakdown = left_join(frag_breakdown,
 
 # import spatial data
 
-geo = frontier::shp2df(baseDir = '~/Documents/USAID/geodata/ne_10m_admin_0_countries_10pctsimpl/',
+geo = geocenter::shp2df(baseDir = '~/Documents/USAID/geodata/ne_10m_admin_0_countries_10pctsimpl/',
                        layerName = 'ne_10m_admin_0_countries', 
                        getCentroids = TRUE,
                        labelVar = 'WB_A3',
@@ -144,12 +144,12 @@ geo_centroids = geo$centroids
 geo = geo$df
 
 # land mass basemap
-land_outline = frontier::shp2df(baseDir = '~/Documents/USAID/geodata/ne_10m_land_2pctsimpl/',
+land_outline = geocenter::shp2df(baseDir = '~/Documents/USAID/geodata/ne_10m_land_2pctsimpl/',
                                 layerName = 'ne_10m_land', getCentroids = FALSE,
                                 reproject = TRUE,
                                 projection = '+proj=wintri +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +no_defs') 
 
-land = frontier::shp2df(baseDir = '~/Documents/USAID/geodata/ne_10m_land_10pctsimpl/',
+land = geocenter::shp2df(baseDir = '~/Documents/USAID/geodata/ne_10m_land_10pctsimpl/',
                         layerName = 'ne_10m_land', getCentroids = FALSE,
                         reproject = TRUE,
                         projection = '+proj=wintri +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +no_defs') 
