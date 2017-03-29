@@ -4,8 +4,9 @@
 # 15 December 2016
 
 # load libraries ----------------------------------------------------------
-library(llamar)
-library(frontier)
+library(llamar) 
+# Requires llamar > 0.1
+library(geocenter)
 library(dplyr)
 library(ggplot2)
 library(RColorBrewer)
@@ -138,20 +139,26 @@ save_plot('~/Creative Cloud Files/MAV/Projects/SouthernAfrica_RDCS/stunting_time
 # save_plot('~/Creative Cloud Files/MAV/Projects/FTF/FTF_subnatl_stuntingDHS', saveBoth = TRUE, 
 #           width = 14, height = 10)
 
-recent_sub=recent_sub %>% filter(!is.na(CharacteristicLabel))
+recent_sub = recent_sub %>% filter(!is.na(CharacteristicLabel))
+
+
 
 for(i in unique(recent_sub$CountryName)){
+  
   data2plot = recent_sub %>% filter(CountryName == i)
+  natl_avg = recent_data %>% filter(CountryName == i)
   
   num_regions = length(unique(data2plot$CharacteristicLabel))
   
-  plot_dot(data2plot, value_var =  'Value', label_digits = 2, value_label_offset = 0.13,
+  
+  
+  plot_dot(data2plot, value_var =  'Value', label_digits = 2, value_label_offset = 0.13, 
+           ref_line = natl_avg$Value,
            by_var = 'forcats::fct_reorder(CharacteristicLabel, Value, .desc=FALSE)', 
-           sort_by = 'Value', scales = 'free_y', grey_background = TRUE,
-           facet_var = 'country', lollipop = T, dot_fill_cont = rev(pal[1:5])) +
-    scale_x_continuous(limits = c(0, round(max(stunting$Value))), labels = percent) +
-    scale_fill_gradientn(colours = rev(pal[1:5]), limits = c(min(stunting$Value), max(stunting$Value)))
-  # ggtitle('Stunting prevalence varies across the countries') +
+           sort_by = 'Value', scales = 'free_y', grey_background = TRUE, percent_vals = TRUE,
+           x_limits = c(0, round(max(stunting$Value))),
+           dot_fill_ = c(min(stunting$Value), max(stunting$Value)),
+           facet_var = 'country', lollipop = T, dot_fill_cont = rev(pal[1:5])) 
   
   save_plot(paste0('~/Creative Cloud Files/MAV/Projects/SouthernAfrica_RDCS/stunting_byregion_', i, '.pdf'), 
             width = 4.5, height = num_regions/2.5)
